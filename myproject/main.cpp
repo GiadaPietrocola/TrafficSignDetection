@@ -16,6 +16,8 @@ int main()
 {
 
 	cv::Mat img = cv::imread(std::string(EXAMPLE_IMAGES_PATH) + "/traffic_sign.jpg");
+
+	float img_area = img.rows * img.cols;
 	ipa::imshow("Original image", img, true, 0.5f);
 
 	cv::Mat blurred;
@@ -33,13 +35,16 @@ int main()
 	int min_width = min_width_perc * img.cols + 0.5f;
 	int max_width = max_width_perc * img.cols + 0.5f;
 
-	// discard objects that are not in the [min_width, max_width]
+	int min_area = min_area_perc * img_area + 0.5f;
+	int max_area = max_area_perc * img_area + 0.5f;
+
+	// discard objects that are not in the [min_area, max_area]
 	std::vector<std::vector<cv::Point>> candidate_objects;
 	for (int k = 0; k < objects.size(); k++)
 	{
-
+		float area = cv::contourArea(objects[k]);
 		cv::Rect brect = cv::boundingRect(objects[k]);
-		if (brect.width >= min_width && brect.width <= max_width)
+		if (area >= min_area && area <= max_area)
 			candidate_objects.push_back(objects[k]);
 	}
 

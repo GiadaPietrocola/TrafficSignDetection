@@ -17,6 +17,9 @@ float sigma = 0.1f;
 float min_width_perc = 0.08f; // minimum width of light expressed as percentage of image width
 float max_width_perc = 0.8f;  // maximum width ...
 
+float min_area_perc = 0.002f;
+float max_area_perc = 0.5f;
+
 struct Utils
 {
 
@@ -38,6 +41,9 @@ struct Utils
             kernel_size += 1;
 
         cv::GaussianBlur(img_in, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
+
+        // cv::morphologyEx(img_blurred, img_blurred, cv::MORPH_CLOSE,
+        //                  cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(1, 1)));
 
         cv::Canny(img_blurred, edges, 100 / 3, 100, 3, false);
     }
