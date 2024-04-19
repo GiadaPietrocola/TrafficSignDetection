@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../libs/libipalib.a CMakeFiles/ipalib.dir/ipaConfig.cpp.o
+/usr/bin/ranlib ../../libs/libipalib.a

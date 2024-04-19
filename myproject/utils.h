@@ -1,3 +1,4 @@
+#pragma once
 // include aia and ucas utility functions
 #include "ipaConfig.h"
 #include "ucasConfig.h"

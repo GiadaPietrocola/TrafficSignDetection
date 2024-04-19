@@ -1,0 +1,13 @@
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/CMakeFiles/edit_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/CMakeFiles/rebuild_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/CMakeFiles/edit_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/CMakeFiles/rebuild_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib/CMakeFiles/ucaslib.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib/CMakeFiles/edit_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib/CMakeFiles/rebuild_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ipalib/CMakeFiles/ipalib.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ipalib/CMakeFiles/edit_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ipalib/CMakeFiles/rebuild_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/myproject/CMakeFiles/ipaproject.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/myproject/CMakeFiles/edit_cache.dir
+/home/achille/Desktop/Projects/TrafficSignDetection-1/build/myproject/CMakeFiles/rebuild_cache.dir

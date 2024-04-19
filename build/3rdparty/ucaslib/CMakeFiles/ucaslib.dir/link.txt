@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../libs/libucaslib.a CMakeFiles/ucaslib.dir/ucasBreastUtils.cpp.o CMakeFiles/ucaslib.dir/ucasConfig.cpp.o CMakeFiles/ucaslib.dir/ucasImageUtils.cpp.o CMakeFiles/ucaslib.dir/ucasMachineLearningUtils.cpp.o CMakeFiles/ucaslib.dir/ucasMultithreading.cpp.o
+/usr/bin/ranlib ../../libs/libucaslib.a

@@ -1,0 +1,142 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						4
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "3rdparty",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"jsonFile" : "directory-3rdparty-Debug-a231e31bb58b23e3c223.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "3rdparty"
+				},
+				{
+					"build" : "3rdparty/ucaslib",
+					"jsonFile" : "directory-3rdparty.ucaslib-Debug-039fad8dc1ad6fa36c32.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "3rdparty/ucaslib",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "3rdparty/ipalib",
+					"jsonFile" : "directory-3rdparty.ipalib-Debug-ebf4174aea7bcb841573.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "3rdparty/ipalib",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "myproject",
+					"jsonFile" : "directory-myproject-Debug-d9c193affa8a7280a750.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "myproject",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"name" : "ipa",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "ipalib::@b25fde2b7006d9de0eae",
+					"jsonFile" : "target-ipalib-Debug-5922ce32c03e38b1133e.json",
+					"name" : "ipalib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "ipaproject::@08898bbd1b55d91224d9",
+					"jsonFile" : "target-ipaproject-Debug-61446a40e6682dd1a94b.json",
+					"name" : "ipaproject",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "ucaslib::@ab25918b2cdd611768a4",
+					"jsonFile" : "target-ucaslib-Debug-ec0318c6560c44462315.json",
+					"name" : "ucaslib",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/achille/Desktop/Projects/TrafficSignDetection-1/build",
+		"source" : "/home/achille/Desktop/Projects/TrafficSignDetection-1"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

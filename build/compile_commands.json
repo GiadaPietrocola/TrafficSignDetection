@@ -1,0 +1,42 @@
+[
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ucaslib.dir/ucasBreastUtils.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasBreastUtils.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasBreastUtils.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ucaslib.dir/ucasConfig.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasConfig.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasConfig.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ucaslib.dir/ucasImageUtils.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasImageUtils.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasImageUtils.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ucaslib.dir/ucasMachineLearningUtils.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasMachineLearningUtils.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasMachineLearningUtils.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ucaslib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ucaslib.dir/ucasMultithreading.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasMultithreading.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib/ucasMultithreading.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/3rdparty/ipalib",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -DOPENCV_FACE_DETECTOR_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ipalib/haarcascade_frontalface_alt.xml\\\" -I/usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ipalib.dir/ipaConfig.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ipalib/ipaConfig.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ipalib/ipaConfig.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/myproject",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ipalib -I/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib -isystem /usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ipaproject.dir/functions.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/myproject/functions.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/myproject/functions.cpp"
+},
+{
+  "directory": "/home/achille/Desktop/Projects/TrafficSignDetection-1/build/myproject",
+  "command": "/usr/bin/g++ -DEXAMPLE_IMAGES_PATH=\\\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\\\" -D_CRT_NO_VA_START_VALIDATION -I/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ipalib -I/home/achille/Desktop/Projects/TrafficSignDetection-1/3rdparty/ucaslib -isystem /usr/include/opencv4 -g -std=gnu++11 -o CMakeFiles/ipaproject.dir/main.cpp.o -c /home/achille/Desktop/Projects/TrafficSignDetection-1/myproject/main.cpp",
+  "file": "/home/achille/Desktop/Projects/TrafficSignDetection-1/myproject/main.cpp"
+}
+]
