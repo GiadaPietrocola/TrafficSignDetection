@@ -1,13 +1,13 @@
 // include aia and ucas utility functions
 #include "ipaConfig.h"
 #include "ucasConfig.h"
+#include "utils.h"
 #include <list>
 
 // include my project functions
 #include "functions.h"
 
 // include my project functions
-#include "functions.h"
 #ifndef EXAMPLE_IMAGES_PATH
 #define EXAMPLE_IMAGES_PATH "example_images"
 #endif
@@ -20,16 +20,9 @@ int main()
 	ipa::imshow("Original image", img, true, 0.5f);
 
 	cv::Mat blurred;
-	cv::cvtColor(img, blurred, cv::COLOR_BGR2GRAY);
-
-	int kernel_size = ucas::round(6 * sigma);
-	if (kernel_size % 2 == 0)
-		kernel_size++;
-
-	cv::GaussianBlur(img, blurred, cv::Size(kernel_size, kernel_size), sigma);
-
 	cv::Mat edges;
-	cv::Canny(blurred, edges, 100 / 3, 100, 3, false);
+
+	Utils::RealCanny(img, blurred, edges, sigma);
 
 	ipa::imshow("Edges", edges, true, 0.5f);
 
