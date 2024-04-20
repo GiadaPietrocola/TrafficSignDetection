@@ -13,7 +13,7 @@
 
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
-float min_circularity = 0.4f;
+float min_circularity = 0.6f;
 float sigma = 0.1f;
 float min_width_perc = 0.08f; // minimum width of light expressed as percentage of image width
 float max_width_perc = 0.8f;  // maximum width ...
@@ -37,6 +37,7 @@ struct Utils
     {
 
         cv::cvtColor(img_in, img_blurred, cv::COLOR_BGR2GRAY);
+        double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
         int kernel_size = ucas::round(6 * sigma);
         if (kernel_size % 2 == 0)
@@ -44,10 +45,10 @@ struct Utils
 
         cv::GaussianBlur(img_in, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
 
-        cv::Canny(img_blurred, edges, 100 / 3, 100, 3, false);
+        cv::Canny(img_blurred, edges, canny_thresh / 3, canny_thresh, 3, false);
 
         // A Close operation could be useful??
-        cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
+        cv::morphologyEx(edges, edges, cv::MORPH_DILATE,
                          cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
     }
 };

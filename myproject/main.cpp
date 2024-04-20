@@ -3,7 +3,6 @@
 #include "ucasConfig.h"
 #include "utils.h"
 #include "core_functions.h"
-#include <list>
 
 // include my project functions
 #include "functions.h"
