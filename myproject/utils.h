@@ -78,13 +78,13 @@ struct Utils
 
         cv::GaussianBlur(img_output_BGReq, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
 
-        double canny_thresh = 200;
+        double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
-        cv::Canny(img_blurred, edges, canny_thresh / 3, canny_thresh, 3, false);
+        cv::Canny(img_blurred, edges, 0.1 * canny_thresh, canny_thresh, 3, false);
 
         // A Close operation could be useful??
-        // cv::morphologyEx(edges, edges, cv::MORPH_DILATE,
-        // cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+        cv::morphologyEx(edges, edges, cv::MORPH_OPEN,
+                         cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
         cv::imwrite(std::string(EXAMPLE_IMAGES_PATH) + "/edges.jpeg", edges);
     }
