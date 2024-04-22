@@ -16,7 +16,7 @@ int main()
 {
 
 	// cv::Mat img = cv::imread("briaDataSet/00010201_ZM7zOyKxCfDUozcWKJj1WA.jpg");
-	cv::Mat img = cv::imread(std::string(EXAMPLE_IMAGES_PATH) + "/giada2.jpeg");
+	cv::Mat img = cv::imread(std::string(IMAGES_PATH) + "/Sign2.jpg");
 
 	ipa::imshow("Original image", img, true, 0.5f);
 
