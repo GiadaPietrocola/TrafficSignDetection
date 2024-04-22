@@ -15,7 +15,7 @@
 int main()
 {
 
-	cv::Mat img = cv::imread(std::string(EXAMPLE_IMAGES_PATH) + "/giada4.jpeg");
+	cv::Mat img = cv::imread(std::string(EXAMPLE_IMAGES_PATH) + "/prova.jpg");
 
 	ipa::imshow("Original image", img, true, 0.5f);
 
