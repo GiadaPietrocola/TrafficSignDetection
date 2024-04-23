@@ -50,6 +50,7 @@ static inline double deg2rad(double degrees)
 
 struct Utils
 {
+
     static cv::Mat histogramEqualization(cv::Mat img)
     {
         std::vector<int> hist = ucas::histogram(img);
@@ -85,10 +86,11 @@ struct Utils
     */
     static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
     {
-        
+        //RGB equalization
         int kernel_size = ucas::round(6 * sigma);
         if (kernel_size % 2 == 0)
             kernel_size += 1;
+
 
         std::vector<cv::Mat> img_channels(3);
         cv::split(img_in, img_channels);

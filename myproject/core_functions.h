@@ -13,6 +13,33 @@
 
 struct CoreFunctions
 {
+    // Function to calculate the median of a single-channel image
+    static double calculateMedian(const cv::Mat& channel) {
+        // Create a vector to store pixel values
+        std::vector<uchar> pixels;
+        pixels.reserve(channel.rows * channel.cols);
+
+        // Copy pixel values to the vector
+        for (int y = 0; y < channel.rows; ++y) {
+            for (int x = 0; x < channel.cols; ++x) {
+                pixels.push_back(channel.at<uchar>(y, x));
+            }
+        }
+
+        // Sort the pixel values
+        std::sort(pixels.begin(), pixels.end());
+
+        // Calculate the median
+        if (pixels.size() % 2 == 0) {
+            // If the number of pixels is even, take the average of the two middle values
+            return static_cast<double>(pixels[pixels.size() / 2 - 1] + pixels[pixels.size() / 2]) / 2.0;
+        }
+        else {
+            // If the number of pixels is odd, take the middle value
+            return static_cast<double>(pixels[pixels.size() / 2]);
+        }
+    }
+
     static void Preprocessing(cv::Mat &img_in)
     {
         float img_area = img_in.rows * img_in.cols;
@@ -61,7 +88,9 @@ struct CoreFunctions
         }
 
         cv::Mat binarySaturation;
-        cv::threshold(hlsChannels[2], binarySaturation, 10, 255, cv::THRESH_BINARY);
+        // Calculate the median value of the saturation channel
+        double medianValue = calculateMedian(hlsChannels[2]);
+        cv::threshold(hlsChannels[2], binarySaturation, medianValue, 255, cv::THRESH_BINARY);
 
         ipa::imshow("prova", binarySaturation, true, 0.5f);
         cv::Mat seeds_prev;
