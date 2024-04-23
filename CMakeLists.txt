@@ -60,6 +60,7 @@ endif()
 # define folder where example images are stored
 add_definitions(-DIMAGES_PATH="${ipa_SOURCE_DIR}/briaDataSet")
 
+
 # build modules
 add_subdirectory( 3rdparty )
 add_subdirectory( myproject )

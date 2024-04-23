@@ -7,9 +7,6 @@
 #include "functions.h"
 
 // include my project functions
-#ifndef EXAMPLE_IMAGES_PATH
-#define EXAMPLE_IMAGES_PATH "example_images"
-#endif
 
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
@@ -21,36 +18,58 @@ float max_width_perc = 0.8f;  // maximum width ...
 float min_area_perc = 0.0002f;
 float max_area_perc = 0.5f;
 
-// data structures
-enum class Color { UNKNOWN, GREEN, ORANGE, RED };
-struct Detection
-{
-    Color color;
-    int frame;
-    double goodness;
-
-    Detection(Color _color, int _frame, double _goodness = 0)
-    {
-        color = _color;
-        frame = _frame;
-        goodness = _goodness;
-    }
-};
-
-// utility degrees 2 radians (and viceversa) functions
-static inline double rad2deg(double radians)
-{
-    return radians * (180.0 / ucas::PI);
-}
-static inline double deg2rad(double degrees)
-{
-    return degrees * (ucas::PI / 180.0);
-}
-
+int minHueValue = 0;
+int maxHueValue = 50;
 
 struct Utils
 {
 
+    // //------------------------------------------------------------------------------
+    // //======================= METHODS =================================
+
+    /**
+     * @brief Function that computes the Median value of
+     *
+     * @param channel
+     * @return double
+     */
+    static double calculateMedian(const cv::Mat &channel)
+    {
+        // Create a vector to store pixel values
+        std::vector<uchar> pixels;
+        pixels.reserve(channel.rows * channel.cols);
+
+        // Copy pixel values to the vector
+        for (int y = 0; y < channel.rows; ++y)
+        {
+            for (int x = 0; x < channel.cols; ++x)
+            {
+                pixels.push_back(channel.at<uchar>(y, x));
+            }
+        }
+
+        // Sort the pixel values
+        std::sort(pixels.begin(), pixels.end());
+
+        // Calculate the median
+        if (pixels.size() % 2 == 0)
+        {
+            // If the number of pixels is even, take the average of the two middle values
+            return static_cast<double>(pixels[pixels.size() / 2 - 1] + pixels[pixels.size() / 2]) / 2.0;
+        }
+        else
+        {
+            // If the number of pixels is odd, take the middle value
+            return static_cast<double>(pixels[pixels.size() / 2]);
+        }
+    }
+
+    /**
+     * @brief Color Histogram Equalization Function
+     *
+     * @param img image input to equalize in place
+     * @return cv::Mat output image
+     */
     static cv::Mat histogramEqualization(cv::Mat img)
     {
         std::vector<int> hist = ucas::histogram(img);
@@ -75,9 +94,6 @@ struct Utils
         return img;
     }
 
-    // //------------------------------------------------------------------------------
-    // //======================= METHODS =================================
-
     /** @brief Real version of Canny's Algorithm
      @param img_in Input image
      @param img_blurred Output image after Gaussian Blur
@@ -86,11 +102,10 @@ struct Utils
     */
     static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
     {
-        //RGB equalization
+        // RGB equalization
         int kernel_size = ucas::round(6 * sigma);
         if (kernel_size % 2 == 0)
             kernel_size += 1;
-
 
         std::vector<cv::Mat> img_channels(3);
         cv::split(img_in, img_channels);
@@ -99,59 +114,129 @@ struct Utils
         histogramEqualization(img_channels[2]);
         cv::Mat img_output_BGReq;
         cv::merge(img_channels, img_output_BGReq);
-    
-        
-    ipa::imshow("Contrast", img_output_BGReq);
 
-    
-  //     cv::cvtColor(img_output_BGReq, img_output_BGReq, cv::COLOR_BGR2GRAY);
+        ipa::imshow("Contrast", img_output_BGReq);
+
+        //     cv::cvtColor(img_output_BGReq, img_output_BGReq, cv::COLOR_BGR2GRAY);
+
+        cv::GaussianBlur(img_output_BGReq, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
+        /*
+
+          //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+            double canny_thresh = 50;
 
 
+            // Convertiamo la matrice in un vettore
+            std::vector<int> values;
+            if (img_blurred.isContinuous()) {
+                values.assign(img_blurred.data, img_blurred.data + img_blurred.total());
+            }
+            else {
+                for (int i = 0; i < img_blurred.rows; ++i) {
+                    values.insert(values.end(), img_blurred.ptr<int>(i), img_blurred.ptr<int>(i) + img_blurred.cols);
+                }
+            }
 
-      cv::GaussianBlur(img_output_BGReq, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
-    /*
+            // Ordiniamo il vettore
+            std::sort(values.begin(), values.end());
 
-      //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+            // Calcoliamo la mediana
+            int median;
+            size_t size = values.size();
+            if (size % 2 == 0) {
+                median = (values[size / 2 - 1] + values[size / 2]) / 2;
+            }
+            else {
+                median = values[size / 2];
+            }
 
-        double canny_thresh = 50;
-        
-        
-        // Convertiamo la matrice in un vettore
-        std::vector<int> values;
-        if (img_blurred.isContinuous()) {
-            values.assign(img_blurred.data, img_blurred.data + img_blurred.total());
-        }
-        else {
-            for (int i = 0; i < img_blurred.rows; ++i) {
-                values.insert(values.end(), img_blurred.ptr<int>(i), img_blurred.ptr<int>(i) + img_blurred.cols);
+            std::cout << median;
+            int lower = int(std::max(0, int(0.7*median)));
+            int upper = int(std::min(255, int(1.1 * median)));
+
+
+           cv::Canny(img_blurred, edges,  lower, upper, 3, false);
+
+            // A Close operation could be useful??
+          //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
+         //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+
+              cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
+              */
+    }
+
+    static void RegionGrowingHSL(cv::Mat &img_in, cv::Mat &segmentedImage)
+    {
+        cv::Mat hlsImage;
+        cv::cvtColor(img_in, hlsImage, cv::COLOR_BGR2HLS);
+
+        // Split the IHLS image into individual channels
+        std::vector<cv::Mat> hlsChannels;
+        cv::split(hlsImage, hlsChannels);
+
+        // Extract the hue channel
+        cv::Mat hueImage = hlsChannels[0];
+
+        // Segment the hue image based on the specified hue range for the sign color
+        cv::Mat hueBinary1;
+        cv::inRange(hueImage, cv::Scalar(minHueValue), cv::Scalar(maxHueValue), hueBinary1);
+
+        cv::Mat hueBinary2;
+        cv::inRange(hueImage, cv::Scalar(150), cv::Scalar(180), hueBinary2);
+
+        cv::Mat hueBinary;
+        cv::bitwise_or(hueBinary1, hueBinary2, hueBinary);
+        ipa::imshow("huebin", hueBinary, true, 0.5f);
+
+        // Divide the binary image into 16x16 sub-regions and calculate seeds for saturation image
+        cv::Mat seeds = cv::Mat::zeros(hueBinary.size(), CV_8UC1); // Initialize seeds matrix with zeros
+
+        for (int y = 8; y < hueBinary.rows - 20; y += 16)
+        {
+            for (int x = 8; x < hueBinary.cols - 20; x += 16)
+            {
+                cv::Rect roi(x - 8, y - 8, 16, 16);
+                cv::Mat subRegion = hueBinary(roi);
+                if (cv::countNonZero(subRegion) > (16 * 16 / 3))
+                {
+                    seeds.at<uchar>(y, x) = 255;
+                }
             }
         }
 
-        // Ordiniamo il vettore
-        std::sort(values.begin(), values.end());
+        cv::Mat binarySaturation;
+        // Calculate the median value of the saturation channel
+        double medianValue = Utils::calculateMedian(hlsChannels[2]);
+        cv::threshold(hlsChannels[2], binarySaturation, medianValue, 255, cv::THRESH_BINARY);
 
-        // Calcoliamo la mediana
-        int median;
-        size_t size = values.size();
-        if (size % 2 == 0) {
-            median = (values[size / 2 - 1] + values[size / 2]) / 2;
-        }
-        else {
-            median = values[size / 2];
-        }
+        ipa::imshow("prova", binarySaturation, true, 0.5f);
+        cv::Mat seeds_prev;
+        cv::Mat predicate = binarySaturation & hueBinary;
+        int i = 0;
+        do
+        {
+            seeds_prev = seeds.clone();
 
-        std::cout << median;
-        int lower = int(std::max(0, int(0.7*median)));
-        int upper = int(std::min(255, int(1.1 * median)));
-          
+            cv::Mat candidates_img;
+            cv::dilate(seeds, candidates_img,
+                       cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+            candidates_img = candidates_img - seeds;
 
-       cv::Canny(img_blurred, edges,  lower, upper, 3, false);
+            seeds += candidates_img & predicate;
 
-        // A Close operation could be useful??
-      //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
-     //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+            i++;
+            // ipa::imshow("Growing in progress", seeds, false, 0.5);
+            // cv::waitKey(10);
+        } while (cv::countNonZero(seeds - seeds_prev) && i < 50);
 
-          cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
-          */
+        segmentedImage = seeds;
+
+        cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_OPEN,
+                         cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+
+        ipa::imshow("segmented", segmentedImage, true, 0.5f);
+
+        cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
     }
 };

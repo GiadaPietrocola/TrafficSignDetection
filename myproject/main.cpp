@@ -3,14 +3,10 @@
 #include "ucasConfig.h"
 #include "utils.h"
 #include "core_functions.h"
+#include <unistd.h>
 
 // include my project functions
 #include "functions.h"
-
-// This is for vscode working
-#ifndef IMAGES_PATH
-#define IMAGES_PATH "example_images"
-#endif
 
 int main()
 {
@@ -22,5 +18,13 @@ int main()
 
 	CoreFunctions::Preprocessing(img);
 
+	// for (int k = 1; k < 30; k++)
+	// {
+	// 	std::string path = std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".jpg";
+	// 	printf("%s\n", path.c_str());
+	// 	cv::Mat img = cv::imread(path);
+	// 	ipa::imshow("Original image", img, true, 0.5f);
+	// 	//  CoreFunctions::Preprocessing(img);
+	// }
 	return EXIT_SUCCESS;
 }
