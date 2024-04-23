@@ -8,8 +8,8 @@
 #include "functions.h"
 
 // This is for vscode working
-#ifndef EXAMPLE_IMAGES_PATH
-#define EXAMPLE_IMAGES_PATH "example_images"
+#ifndef IMAGES_PATH
+#define IMAGES_PATH "example_images"
 #endif
 
 int main()
