@@ -70,7 +70,7 @@
 			[
 				{
 					"backtrace" : 3,
-					"define" : "EXAMPLE_IMAGES_PATH=\"/home/achille/Desktop/Projects/TrafficSignDetection-1/example_images\""
+					"define" : "IMAGES_PATH=\"/home/achille/Desktop/Projects/TrafficSignDetection-1/briaDataSet\""
 				},
 				{
 					"backtrace" : 4,
