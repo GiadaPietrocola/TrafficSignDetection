@@ -6,7 +6,10 @@
 // include my project functions
 #include "functions.h"
 
-// include my project functions
+// for vscode work
+#ifndef IMAGES_PATH
+#define IMAGES_PATH "briaDataSet"
+#endif
 
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
@@ -26,6 +29,73 @@ struct Utils
 
     // //------------------------------------------------------------------------------
     // //======================= METHODS =================================
+    /** @brief Real version of Canny's Algorithm
+     @param img_in Input image
+     @param img_blurred Output image after Gaussian Blur
+     @param edges Output edge's image after Canny's algorithm
+     @param sigma Sigma coefficient of Gaussian Blur
+    */
+    static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
+    {
+        cv::cvtColor(img_in, img_in, cv::COLOR_BGR2GRAY);
+
+        //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+        double canny_thresh = 50;
+
+        /*
+        // Convertiamo la matrice in un vettore
+        std::vector<int> values;
+        if (img_blurred.isContinuous()) {
+            values.assign(img_blurred.data, img_blurred.data + img_blurred.total());
+        }
+        else {
+            for (int i = 0; i < img_blurred.rows; ++i) {
+                values.insert(values.end(), img_blurred.ptr<int>(i), img_blurred.ptr<int>(i) + img_blurred.cols);
+            }
+        }
+
+        // Ordiniamo il vettore
+        std::sort(values.begin(), values.end());
+
+        // Calcoliamo la mediana
+        int median;
+        size_t size = values.size();
+        if (size % 2 == 0) {
+            median = (values[size / 2 - 1] + values[size / 2]) / 2;
+        }
+        else {
+            median = values[size / 2];
+        }
+
+        std::cout << median;
+        int lower = int(std::max(0, int(0.7*median)));
+        int upper = int(std::min(255, int(1.1 * median)));
+*/
+
+        cv::Canny(img_in, edges, canny_thresh, 3 * canny_thresh, 3, false);
+
+        // A Close operation could be useful??
+        //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
+        //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+
+        //   cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
+    }
+
+    /**
+     * @brief Function that compute the right kernel size and executes the GaussianBlur
+     *
+     * @param img_in
+     * @param img_out
+     * @param sigma
+     */
+    static void CustomGaussianBlur(cv::Mat &img_in, cv::Mat &img_out, float sigma)
+    {
+        int kernel_size = ucas::round(6 * sigma);
+        if (kernel_size % 2 == 0)
+            kernel_size += 1;
+        cv::GaussianBlur(img_in, img_out, cv::Size(kernel_size, kernel_size), sigma);
+    }
 
     /**
      * @brief Function that computes the Median value of
@@ -98,7 +168,7 @@ struct Utils
     @param img_in Input image
     @param img_blurred Output image after Histogram Equalization
     */
-    static void HistogramBGReq(const cv::Mat& img_in, cv::Mat& img_output_BGReq)
+    static void HistogramBGReq(const cv::Mat &img_in, cv::Mat &img_output_BGReq)
     {
         std::vector<cv::Mat> img_channels(3);
         cv::split(img_in, img_channels);
@@ -110,7 +180,8 @@ struct Utils
         ipa::imshow("Contrast", img_output_BGReq);
     }
 
-    static void HistogramLabeq(const cv::Mat& img_in, cv::Mat& img_output_Labeq) {
+    static void HistogramLabeq(const cv::Mat &img_in, cv::Mat &img_output_Labeq)
+    {
         // Convert the image to Lab color space
         cv::Mat labImage;
         cv::cvtColor(img_in, labImage, cv::COLOR_BGR2Lab);
@@ -129,77 +200,21 @@ struct Utils
         // Convert the image back to the original color space
         cv::Mat equalizedImage;
         cv::cvtColor(equalizedLabImage, img_output_Labeq, cv::COLOR_Lab2BGR);
-
     }
 
-    static void AdaptiveThresh(const cv::Mat& img_in, cv::Mat& img_bin_adaptive)
+    static void AdaptiveThresh(const cv::Mat &img_in, cv::Mat &img_bin_adaptive)
     {
-        int block_size = 11;	// it works in the range [40, 100] and beyond
-        int C = 2.0;			// it works in the range [-40, 0]
+        int block_size = 11; // it works in the range [40, 100] and beyond
+        int C = 2.0;         // it works in the range [-40, 0]
         cv::adaptiveThreshold(img_in, img_bin_adaptive, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, block_size, C);
         ipa::imshow("Adaptive binarization", img_bin_adaptive, true, 2.0f);
-
     }
 
-    static void TriangularThresh(const cv::Mat& img_in, cv::Mat& img_bin_triangle)
+    static void TriangularThresh(const cv::Mat &img_in, cv::Mat &img_bin_triangle)
     {
         int T_triangle = ucas::getTriangleAutoThreshold(ucas::histogram(img_in));
         cv::threshold(img_in, img_bin_triangle, T_triangle, 255, cv::THRESH_BINARY);
         ipa::imshow("Triangle binarization", img_bin_triangle, true, 2.0f);
-    }
-    /** @brief Real version of Canny's Algorithm
-     @param img_in Input image
-     @param img_blurred Output image after Gaussian Blur
-     @param edges Output edge's image after Canny's algorithm
-     @param sigma Sigma coefficient of Gaussian Blur
-    */
-    static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
-    {
-        cv::cvtColor(img_in, img_in,cv::COLOR_BGR2GRAY);
-
-            
-          //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-            double canny_thresh = 50;
-
-            /*
-            // Convertiamo la matrice in un vettore
-            std::vector<int> values;
-            if (img_blurred.isContinuous()) {
-                values.assign(img_blurred.data, img_blurred.data + img_blurred.total());
-            }
-            else {
-                for (int i = 0; i < img_blurred.rows; ++i) {
-                    values.insert(values.end(), img_blurred.ptr<int>(i), img_blurred.ptr<int>(i) + img_blurred.cols);
-                }
-            }
-
-            // Ordiniamo il vettore
-            std::sort(values.begin(), values.end());
-
-            // Calcoliamo la mediana
-            int median;
-            size_t size = values.size();
-            if (size % 2 == 0) {
-                median = (values[size / 2 - 1] + values[size / 2]) / 2;
-            }
-            else {
-                median = values[size / 2];
-            }
-
-            std::cout << median;
-            int lower = int(std::max(0, int(0.7*median)));
-            int upper = int(std::min(255, int(1.1 * median)));
-*/
-
-           cv::Canny(img_in, edges,  canny_thresh, 3*canny_thresh, 3, false);
-
-            // A Close operation could be useful??
-          //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
-         //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
-
-           //   cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
-              
     }
 
     static void RegionGrowingHSV(cv::Mat &img_in, cv::Mat &segmentedImage)
@@ -243,19 +258,15 @@ struct Utils
             }
         }
 
-
         cv::Mat binarySaturation;
 
-
-        //Calculate the median value of the saturation channel
+        // Calculate the median value of the saturation channel
         double medianValue = Utils::calculateMedian(hlsChannels[1]);
-        
 
         cv::threshold(hlsChannels[1], binarySaturation, 50, 255, cv::THRESH_BINARY);
-        cv::imwrite(std::string(IMAGES_PATH)+"/sat.jpg", binarySaturation);
-        
-   
-      //  AdaptiveThresh(hlsChannels[1], binarySaturation);
+        cv::imwrite(std::string(IMAGES_PATH) + "/sat.jpg", binarySaturation);
+
+        //  AdaptiveThresh(hlsChannels[1], binarySaturation);
         ipa::imshow("prova", binarySaturation, true, 0.5f);
         cv::Mat seeds_prev;
         cv::Mat predicate = binarySaturation & hueBinary;
@@ -272,14 +283,14 @@ struct Utils
             seeds += candidates_img & predicate;
 
             i++;
-           //  ipa::imshow("Growing in progress", seeds, true, 0.5);
-             //cv::waitKey(10);
+            //  ipa::imshow("Growing in progress", seeds, true, 0.5);
+            // cv::waitKey(10);
         } while (cv::countNonZero(seeds - seeds_prev) && i < 20);
 
         segmentedImage = seeds;
 
-      //  cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
-       //                  cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+        //  cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
+        //                  cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
         ipa::imshow("segmented", segmentedImage, true, 0.5f);
 

@@ -1,0 +1,91 @@
+{
+  "width": 4128, 
+  "objects": [
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 546.234375, 
+        "ymin": 1089.193359375, 
+        "ymax": 1279.669921875, 
+        "xmax": 634.921875
+      }, 
+      "key": "ggueofmbrc968iet6z92cp", 
+      "label": "regulatory--no-entry--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 523.0546875, 
+        "ymin": 1263.041015625, 
+        "ymax": 1463.34375, 
+        "xmax": 605.6953125
+      }, 
+      "key": "o4ltmkfgwfpyny56b21o2d", 
+      "label": "regulatory--turn-left--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 948.3515625, 
+        "ymin": 1399.8515625, 
+        "ymax": 1520.033203125, 
+        "xmax": 1069.2890625
+      }, 
+      "key": "v03j4kntzxjpa5e7xizfyz", 
+      "label": "regulatory--no-entry--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 2369.3671875, 
+        "ymin": 1386.24609375, 
+        "ymax": 1501.892578125, 
+        "xmax": 2483.25
+      }, 
+      "key": "z6sn5wrupi7oecw85aoruk", 
+      "label": "regulatory--no-entry--g1"
+    }
+  ], 
+  "ispano": false, 
+  "height": 3096
+}

@@ -1,0 +1,91 @@
+{
+  "width": 4160, 
+  "objects": [
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 3564.84375, 
+        "ymin": 1445.7421875, 
+        "ymax": 1601.89453125, 
+        "xmax": 3634.921875
+      }, 
+      "key": "L73s_eoLSNqIjxsrD7YS2Q", 
+      "label": "regulatory--yield--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 3523.203125, 
+        "ymin": 1623.984375, 
+        "ymax": 1773.28125, 
+        "xmax": 3675.546875
+      }, 
+      "key": "duUhhb1vQQ-vXpUEw9Jr5w", 
+      "label": "regulatory--no-entry--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 2624.375, 
+        "ymin": 1694.0625, 
+        "ymax": 1797.65625, 
+        "xmax": 2716.796875
+      }, 
+      "key": "rvaIAc7CTiK0Mh-1h-9Bhg", 
+      "label": "information--pedestrians-crossing--g1"
+    }, 
+    {
+      "properties": {
+        "ambiguous": false, 
+        "dummy": false, 
+        "direction-or-information": false, 
+        "barrier": false, 
+        "occluded": false, 
+        "out-of-frame": false, 
+        "exterior": false, 
+        "included": false, 
+        "highway": false
+      }, 
+      "bbox": {
+        "xmin": 3541.484375, 
+        "ymin": 1363.4765625, 
+        "ymax": 1460.21484375, 
+        "xmax": 3643.046875
+      }, 
+      "key": "nl5UTWkTRFOJWeR62Ti4Hw", 
+      "label": "regulatory--one-way-left--g1"
+    }
+  ], 
+  "ispano": false, 
+  "height": 3120
+}

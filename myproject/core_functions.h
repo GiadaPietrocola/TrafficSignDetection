@@ -6,11 +6,6 @@
 // include my project functions
 #include "functions.h"
 
-// include my project functions
-#ifndef IMAGES_PATH
-#define IMAGES_PATH "example_images"
-#endif
-
 struct CoreFunctions
 {
 
@@ -22,24 +17,18 @@ struct CoreFunctions
 
         // Utils::RealCanny(img_in, blurred, edges, sigma);
 
-        int kernel_size = ucas::round(6 * sigma);
-        if (kernel_size % 2 == 0)
-            kernel_size += 1;
-
-        Utils::HistogramLabeq(img_in,img_in);
- 
+        Utils::HistogramLabeq(img_in, img_in);
 
         cv::Mat img_blurred;
-       cv::GaussianBlur(img_in, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
-       
-       cv::imwrite(std::string(IMAGES_PATH)+"/gaussian.jpg",img_blurred);
-
+        Utils::CustomGaussianBlur(img_in, img_blurred, sigma);
+        cv::imwrite(std::string(IMAGES_PATH) + "/gaussian.jpg", img_blurred);
         ipa::imshow("Gaussian", img_blurred, true, 0.5f);
+
         cv::Mat segmentedImage;
         Utils::RegionGrowingHSV(img_in, segmentedImage);
 
-     //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
-     //                          cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+        //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
+        //                          cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
         ipa::imshow("Morph", segmentedImage, true, 0.5f);
 
