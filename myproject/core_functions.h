@@ -22,9 +22,27 @@ struct CoreFunctions
 
         // Utils::RealCanny(img_in, blurred, edges, sigma);
 
-        //  ipa::imshow("Edges", edges, true, 0.5f);
+        int kernel_size = ucas::round(6 * sigma);
+        if (kernel_size % 2 == 0)
+            kernel_size += 1;
+
+        Utils::HistogramLabeq(img_in,img_in);
+ 
+
+        cv::Mat img_blurred;
+       cv::GaussianBlur(img_in, img_blurred, cv::Size(kernel_size, kernel_size), sigma);
+       
+       cv::imwrite(std::string(IMAGES_PATH)+"/gaussian.jpg",img_blurred);
+
+        ipa::imshow("Gaussian", img_blurred, true, 0.5f);
         cv::Mat segmentedImage;
-        Utils::RegionGrowingHSL(img_in, segmentedImage);
+        Utils::RegionGrowingHSV(img_in, segmentedImage);
+
+     //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
+     //                          cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+
+        ipa::imshow("Morph", segmentedImage, true, 0.5f);
+
         // extract objects
         std::vector<std::vector<cv::Point>> objects;
         cv::findContours(segmentedImage, objects, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
