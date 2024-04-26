@@ -24,6 +24,9 @@ float max_area_perc = 0.5f;
 int minHueValue = 0;
 int maxHueValue = 20;
 
+std::vector<std::vector<cv::Point>> realSignContours;
+std::vector<std::vector<cv::Point>> candidateSgnCotours;
+
 struct Utils
 {
 
@@ -295,5 +298,33 @@ struct Utils
         ipa::imshow("segmented", segmentedImage, true, 0.5f);
 
         cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
+    }
+
+    static std::vector<cv::Point> getRectContours(cv::Rect rect)
+    {
+        std::vector<cv::Point> tmp;
+        tmp.push_back(cv::Point(rect.x, rect.y));
+        tmp.push_back(cv::Point(rect.x + rect.width, rect.y));
+        tmp.push_back(cv::Point(rect.x + rect.width, rect.y + rect.height));
+        tmp.push_back(cv::Point(rect.x, rect.y + rect.height));
+
+        return tmp;
+    }
+
+    static float IntersectionOverUnion(cv::Rect rect1, cv::Rect rect2)
+    {
+        float areaOfOverlap = 0;
+        float areaOfUnion = 0;
+
+        cv::Rect intersection_rect = rect1 & rect2;
+
+        if (!intersection_rect.empty())
+            areaOfOverlap = intersection_rect.width * intersection_rect.height;
+        else
+            return -1;
+
+        areaOfUnion = rect1.area() + rect2.area() - areaOfOverlap;
+
+        return (areaOfOverlap / areaOfUnion);
     }
 };

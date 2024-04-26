@@ -65,6 +65,14 @@ struct CoreFunctions
         }
 
         cv::drawContours(img_in, circular_objects, -1, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
+        for (int i = 0; i < circular_objects.size(); i++)
+        {
+            cv::Rect boundingRect = cv::boundingRect(circular_objects[i]);
+            candidateSgnCotours.push_back(Utils::getRectContours(boundingRect));
+            cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
+        }
+
+        cv::drawContours(img_in, circular_objects, -1, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
 
         ipa::imshow("image", img_in, true, 0.5f);
 

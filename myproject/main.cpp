@@ -26,6 +26,9 @@ int main()
 
 	for (int k = 1; k < 2; k++)
 	{
+		realSignContours.clear();
+		candidateSgnCotours.clear();
+
 		std::string path = std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".jpg";
 		std::string path_json = (std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".json");
 		FILE *file = fopen(path_json.c_str(), "rb");
@@ -65,10 +68,9 @@ int main()
 				bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymin"].GetFloat()));
 				bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymax"].GetFloat()));
 				bbox.push_back(cv::Point(bboxvalue["xmin"].GetFloat(), bboxvalue["ymax"].GetFloat()));
-				std::vector<std::vector<cv::Point>> contours;
-				contours.push_back(bbox);
+				realSignContours.push_back(bbox);
 
-				cv::drawContours(img2draw, contours, -1, cv::Scalar(0, 255, 0), 2);
+				cv::drawContours(img2draw, realSignContours, -1, cv::Scalar(0, 255, 0), 2);
 			}
 			ipa::imshow("Real Sign", img2draw, true, 0.5f);
 		}
