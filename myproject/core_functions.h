@@ -147,7 +147,7 @@ struct CoreFunctions
      */
     static void JsonHandler()
     {
-        for (int k = 1; k < 20; k++)
+        for (int k = 1; k < 2; k++)
         {
             realSignContours.clear();
             candidateSignCotours.clear();
@@ -199,7 +199,7 @@ struct CoreFunctions
             }
 
             ipa::imshow("Original image", img, true, 0.5f);
-            // CoreFunctions::Preprocessing(img);
+            CoreFunctions::Preprocessing(img);
             cv::destroyAllWindows();
         }
     }
