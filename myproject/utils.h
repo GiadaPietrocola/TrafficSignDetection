@@ -13,31 +13,36 @@
 
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
-float min_circularity = 0.6f;
+float min_circularity = 0.6f; // filter parameter: minimum circularity normalized
 float sigma = 1.0f;
-float min_width_perc = 0.08f; // minimum width of light expressed as percentage of image width
-float max_width_perc = 0.8f;  // maximum width ...
+float min_width_perc = 0.08f; // filter parameter: minimum width of light expressed as percentage of image width
+float max_width_perc = 0.8f;  // filter parameter: maximum width of light expressed as percentage of image width
 
-float min_area_perc = 0.0002f;
-float max_area_perc = 0.5f;
+float min_area_perc = 0.0002f; // filter parameter: minimum area of signs extressed as percentage of image area
+float max_area_perc = 0.5f;    // filter parameter: maximum area of signs extressed as percentage of image area
 
-int minHueValue = 0;
-int maxHueValue = 20;
+int minHueValue = 0;  // filter parameter: minimum value of Hue to pick the red color
+int maxHueValue = 20; // filter parameter: maximum value of Hue to pick the red color
 
-std::vector<std::vector<cv::Point>> realSignContours;
-std::vector<std::vector<cv::Point>> candidateSgnCotours;
+std::vector<std::vector<cv::Point>> realSignContours;     // contours vector of real signs, taken from Json
+std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
+
+std::string noEntryLabelJson = "regulatory--no-entry--g1";
 
 struct Utils
 {
 
     // //------------------------------------------------------------------------------
     // //======================= METHODS =================================
-    /** @brief Real version of Canny's Algorithm
-     @param img_in Input image
-     @param img_blurred Output image after Gaussian Blur
-     @param edges Output edge's image after Canny's algorithm
-     @param sigma Sigma coefficient of Gaussian Blur
-    */
+
+    /**
+     * @brief Real version of Canny's Algorithm
+     *
+     * @param img_in Input image
+     * @param img_blurred Output image after Gaussian Blur
+     * @param edges Output edge's image after Canny's algorithm
+     * @param sigma Sigma coefficient of Gaussian Blur
+     */
     static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
     {
         cv::cvtColor(img_in, img_in, cv::COLOR_BGR2GRAY);
@@ -88,9 +93,9 @@ struct Utils
     /**
      * @brief Function that compute the right kernel size and executes the GaussianBlur
      *
-     * @param img_in
-     * @param img_out
-     * @param sigma
+     * @param img_in Image in input
+     * @param img_out Image in output
+     * @param sigma Sigma value to use into the GaussianBlur
      */
     static void CustomGaussianBlur(cv::Mat &img_in, cv::Mat &img_out, float sigma)
     {
@@ -103,8 +108,8 @@ struct Utils
     /**
      * @brief Function that computes the Median value of
      *
-     * @param channel
-     * @return double
+     * @param channel Channel to use for Median
+     * @return double Median value of the Channel in input
      */
     static double calculateMedian(const cv::Mat &channel)
     {
@@ -140,8 +145,8 @@ struct Utils
     /**
      * @brief Color Histogram Equalization Function
      *
-     * @param img image input to equalize in place
-     * @return cv::Mat output image
+     * @param img Image input to equalize in place
+     * @return cv::Mat Output image
      */
     static cv::Mat histogramEqualization(cv::Mat img)
     {
@@ -167,10 +172,12 @@ struct Utils
         return img;
     }
 
-    /** @brief Histogram Equalization on BGR channels
-    @param img_in Input image
-    @param img_blurred Output image after Histogram Equalization
-    */
+    /**
+     * @brief Histogram Equalization on BGR channels
+     *
+     * @param img_in Input image
+     * @param img_blurred Output image after Histogram Equalization
+     */
     static void HistogramBGReq(const cv::Mat &img_in, cv::Mat &img_output_BGReq)
     {
         std::vector<cv::Mat> img_channels(3);
@@ -183,6 +190,12 @@ struct Utils
         ipa::imshow("Contrast", img_output_BGReq);
     }
 
+    /**
+     * @brief Histogram Equalization on LAB channels
+     *
+     * @param img_in Input Image
+     * @param img_output_Labeq Output Image
+     */
     static void HistogramLabeq(const cv::Mat &img_in, cv::Mat &img_output_Labeq)
     {
         // Convert the image to Lab color space
@@ -205,6 +218,12 @@ struct Utils
         cv::cvtColor(equalizedLabImage, img_output_Labeq, cv::COLOR_Lab2BGR);
     }
 
+    /**
+     * @brief Adaptive Threshold
+     *
+     * @param img_in Input Image
+     * @param img_bin_adaptive Output Image
+     */
     static void AdaptiveThresh(const cv::Mat &img_in, cv::Mat &img_bin_adaptive)
     {
         int block_size = 11; // it works in the range [40, 100] and beyond
@@ -213,6 +232,12 @@ struct Utils
         ipa::imshow("Adaptive binarization", img_bin_adaptive, true, 2.0f);
     }
 
+    /**
+     * @brief Triangular Threshold
+     *
+     * @param img_in Input Image
+     * @param img_bin_triangle Output Image
+     */
     static void TriangularThresh(const cv::Mat &img_in, cv::Mat &img_bin_triangle)
     {
         int T_triangle = ucas::getTriangleAutoThreshold(ucas::histogram(img_in));
@@ -220,6 +245,12 @@ struct Utils
         ipa::imshow("Triangle binarization", img_bin_triangle, true, 2.0f);
     }
 
+    /**
+     * @brief RegioN Growing on HSV Color Space
+     *
+     * @param img_in Input Image
+     * @param segmentedImage Output Image
+     */
     static void RegionGrowingHSV(cv::Mat &img_in, cv::Mat &segmentedImage)
     {
         cv::Mat hlsImage;
@@ -300,6 +331,12 @@ struct Utils
         cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
     }
 
+    /**
+     * @brief Get the Rect Contours object
+     *
+     * @param rect Input Rectangle
+     * @return std::vector<cv::Point>  Rect Vertices Vector
+     */
     static std::vector<cv::Point> getRectContours(cv::Rect rect)
     {
         std::vector<cv::Point> tmp;
@@ -311,6 +348,13 @@ struct Utils
         return tmp;
     }
 
+    /**
+     * @brief Intersection Over Union
+     *
+     * @param rect1 First Input Rect
+     * @param rect2 Second Input Rect
+     * @return float Intersection Over Union
+     */
     static float IntersectionOverUnion(cv::Rect rect1, cv::Rect rect2)
     {
         float areaOfOverlap = 0;
