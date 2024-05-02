@@ -199,6 +199,7 @@ struct CoreFunctions
             }
 
             ipa::imshow("Original image", img, true, 0.5f);
+
             CoreFunctions::Preprocessing(img);
             cv::destroyAllWindows();
         }

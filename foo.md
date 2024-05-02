@@ -6,3 +6,7 @@ static class foo{
     - std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
 
 }
+
+
+- hough circle
+- top hat 
