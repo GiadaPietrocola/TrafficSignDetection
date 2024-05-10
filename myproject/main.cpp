@@ -10,13 +10,13 @@
 int main()
 {
 
-	// cv::Mat img = cv::imread("briaDataSet/00010201_ZM7zOyKxCfDUozcWKJj1WA.jpg");
-	cv::Mat img = cv::imread(std::string(IMAGES_PATH) + "/Sign3.jpg");
+	//cv::Mat img = cv::imread("briaDataSet/00010201_ZM7zOyKxCfDUozcWKJj1WA.jpg");
+	//cv::Mat img = cv::imread(std::string(IMAGES_PATH) + "/Sign3.jpg");
 
-	ipa::imshow("Original image", img, true, 0.5f);
+	//ipa::imshow("Original image", img, true, 0.5f);
 
-	CoreFunctions::Preprocessing(img);
+//	CoreFunctions::Preprocessing(img);
 
-	// CoreFunctions::JsonHandler();
+	CoreFunctions::JsonHandler(false);
 	return EXIT_SUCCESS;
 }

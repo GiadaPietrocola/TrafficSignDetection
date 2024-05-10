@@ -31,10 +31,129 @@ std::string noEntryLabelJson = "regulatory--no-entry--g1";
 
 struct Utils
 {
-
+    
     // //------------------------------------------------------------------------------
     // //======================= METHODS =================================
+ 
 
+    static void findRectangles(cv::Mat& img_in, std::vector< std::vector<cv::Point> > &contours) {
+
+        // switch to grayscale
+        cv::Mat gray;
+        cv::cvtColor(img_in, gray, cv::COLOR_BGR2GRAY);
+
+        // denoising
+        cv::GaussianBlur(gray, gray, cv::Size(5, 5), 0,0.6);
+
+        // rectangles enhancement with grayscale morphological tophat
+        cv::Mat tophat;
+        cv::morphologyEx(gray, tophat, cv::MORPH_TOPHAT,
+            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(11, 61)));
+
+        cv::Mat edges;
+      
+        // binarization
+        Utils::AdaptiveThresh(tophat, edges,71,-1);
+        
+        // morpological opening
+        cv::morphologyEx(edges, edges, cv::MORPH_OPEN,
+            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5)));
+
+        // Find contours    
+        cv::findContours(edges, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+
+        // filter by area
+        contours.erase(std::remove_if(contours.begin(), contours.end(),
+            [](const std::vector<cv::Point>& object)
+            {
+                double area = cv::contourArea(object);
+                return area<800 ||area > 12000;
+            }
+        ), contours.end());
+        
+        // filter by rectangularity
+        contours.erase(std::remove_if(contours.begin(), contours.end(),
+            [](const std::vector<cv::Point>& object)
+            {
+                double area = cv::contourArea(object);
+                cv::RotatedRect bounding_rect = cv::minAreaRect(object);
+
+                cv::Point2f vertices[4];
+                bounding_rect.points(vertices);
+
+                float width = norm(vertices[0] - vertices[1]);
+                float height = norm(vertices[1] - vertices[2]);
+
+                float bounding_rect_area = width * height;
+
+                return area / bounding_rect_area < 0.75;
+            }
+        ), contours.end());
+
+        // filter by aspect ratio
+        contours.erase(std::remove_if(contours.begin(), contours.end(),
+            [](const std::vector<cv::Point>& object)
+            {
+                cv::RotatedRect rot_rect = cv::minAreaRect(object);
+                if (rot_rect.size.width > rot_rect.size.height)
+                {
+                    cv::swap(rot_rect.size.width, rot_rect.size.height);
+                    rot_rect.angle += 90.f;
+                }
+                return std::abs(rot_rect.size.aspectRatio() - 0.3) > 0.16;
+            }
+        ), contours.end());
+        
+        // filter by orientation
+        contours.erase(std::remove_if(contours.begin(), contours.end(),
+            [](const std::vector<cv::Point>& object)
+            {
+                cv::RotatedRect rot_rect = cv::minAreaRect(object);
+                if (rot_rect.size.width > rot_rect.size.height)
+                {
+                    cv::swap(rot_rect.size.width, rot_rect.size.height);
+                    rot_rect.angle += 90.f;
+                }
+               
+        float angle_tolerance = 45.0;
+        float min_horizontal_angle = 90.0 - angle_tolerance;
+        float max_horizontal_angle = 90.0 + angle_tolerance;
+
+        return !(rot_rect.angle >= min_horizontal_angle && rot_rect.angle <= max_horizontal_angle);
+
+            }
+        ), contours.end());
+       
+        cv::Mat output = img_in.clone();
+    }
+
+
+    static float Median(const cv::Mat &img_in) {
+        // Convertiamo la matrice in un vettore
+        std::vector<int> values;
+        if (img_in.isContinuous()) {
+            values.assign(img_in.data, img_in.data + img_in.total());
+        }
+        else {
+            for (int i = 0; i < img_in.rows; ++i) {
+                values.insert(values.end(), img_in.ptr<int>(i), img_in.ptr<int>(i) + img_in.cols);
+            }
+        }
+
+        // Ordiniamo il vettore
+        std::sort(values.begin(), values.end());
+
+        // Calcoliamo la mediana
+        int median;
+        size_t size = values.size();
+        if (size % 2 == 0) {
+            median = (values[size / 2 - 1] + values[size / 2]) / 2;
+        }
+        else {
+            median = values[size / 2];
+        }
+        return median;
+    }
     /**
      * @brief Real version of Canny's Algorithm
      *
@@ -45,13 +164,17 @@ struct Utils
      */
     static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
     {
-        cv::cvtColor(img_in, img_in, cv::COLOR_BGR2GRAY);
+      //  cv::cvtColor(img_in, img_in, cv::COLOR_BGR2GRAY);
 
+     //   Utils::CustomGaussianBlur(img_in, img_blurred, sigma);
+
+
+        cv::GaussianBlur(img_in, img_blurred, cv::Size(5, 5), 0.5, 0.5);
         //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
         double canny_thresh = 50;
 
-        /*
+        
         // Convertiamo la matrice in un vettore
         std::vector<int> values;
         if (img_blurred.isContinuous()) {
@@ -76,119 +199,20 @@ struct Utils
             median = values[size / 2];
         }
 
-        std::cout << median;
-        int lower = int(std::max(0, int(0.7*median)));
-        int upper = int(std::min(255, int(1.1 * median)));
-*/
+       // std::cout << median;
+        int lower = int(std::max(0, int(0.9*median)));
+        int upper = int(std::min(255, int(1.2 * median)));
 
-        cv::Canny(img_in, edges, canny_thresh, 3 * canny_thresh, 3, false);
+
+        cv::Canny(img_blurred, edges, 150/2, 150, 3, false);
 
         // A Close operation could be useful??
         //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
         //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
-        //   cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
+         cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
     }
 
-    /**
-     * @brief Function that compute the right kernel size and executes the GaussianBlur
-     *
-     * @param img_in Image in input
-     * @param img_out Image in output
-     * @param sigma Sigma value to use into the GaussianBlur
-     */
-    static void CustomGaussianBlur(cv::Mat &img_in, cv::Mat &img_out, float sigma)
-    {
-        int kernel_size = ucas::round(6 * sigma);
-        if (kernel_size % 2 == 0)
-            kernel_size += 1;
-        cv::GaussianBlur(img_in, img_out, cv::Size(kernel_size, kernel_size), sigma);
-    }
-
-    /**
-     * @brief Function that computes the Median value of
-     *
-     * @param channel Channel to use for Median
-     * @return double Median value of the Channel in input
-     */
-    static double calculateMedian(const cv::Mat &channel)
-    {
-        // Create a vector to store pixel values
-        std::vector<uchar> pixels;
-        pixels.reserve(channel.rows * channel.cols);
-
-        // Copy pixel values to the vector
-        for (int y = 0; y < channel.rows; ++y)
-        {
-            for (int x = 0; x < channel.cols; ++x)
-            {
-                pixels.push_back(channel.at<uchar>(y, x));
-            }
-        }
-
-        // Sort the pixel values
-        std::sort(pixels.begin(), pixels.end());
-
-        // Calculate the median
-        if (pixels.size() % 2 == 0)
-        {
-            // If the number of pixels is even, take the average of the two middle values
-            return static_cast<double>(pixels[pixels.size() / 2 - 1] + pixels[pixels.size() / 2]) / 2.0;
-        }
-        else
-        {
-            // If the number of pixels is odd, take the middle value
-            return static_cast<double>(pixels[pixels.size() / 2]);
-        }
-    }
-
-    /**
-     * @brief Color Histogram Equalization Function
-     *
-     * @param img Image input to equalize in place
-     * @return cv::Mat Output image
-     */
-    static cv::Mat histogramEqualization(cv::Mat img)
-    {
-        std::vector<int> hist = ucas::histogram(img);
-
-        int L = 256;
-        std::vector<int> hist_eq_LUT(L);
-        float norm_factor = float(L - 1) / (img.rows * img.cols);
-        int accum = 0;
-        for (int k = 0; k < hist_eq_LUT.size(); k++)
-        {
-            accum += hist[k];
-            hist_eq_LUT[k] = norm_factor * accum;
-        }
-
-        for (int y = 0; y < img.rows; y++)
-        {
-            unsigned char *yRow = img.ptr<unsigned char>(y);
-            for (int x = 0; x < img.cols; x++)
-                yRow[x] = hist_eq_LUT[yRow[x]];
-        }
-
-        return img;
-    }
-
-    /**
-     * @brief Histogram Equalization on BGR channels
-     *
-     * @param img_in Input image
-     * @param img_blurred Output image after Histogram Equalization
-     */
-    static void HistogramBGReq(const cv::Mat &img_in, cv::Mat &img_output_BGReq)
-    {
-        std::vector<cv::Mat> img_channels(3);
-        cv::split(img_in, img_channels);
-        histogramEqualization(img_channels[0]);
-        histogramEqualization(img_channels[1]);
-        histogramEqualization(img_channels[2]);
-        cv::merge(img_channels, img_output_BGReq);
-
-        ipa::imshow("Contrast", img_output_BGReq);
-    }
 
     /**
      * @brief Histogram Equalization on LAB channels
@@ -207,7 +231,15 @@ struct Utils
         cv::split(labImage, labChannels);
 
         // Perform histogram equalization on the L channel
-        cv::equalizeHist(labChannels[0], labChannels[0]);
+        // Create CLAHE object
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(2.0); // Adjust clip limit as needed
+        clahe->setTilesGridSize(cv::Size(10, 10)); // Adjust grid size as needed
+
+        // Apply CLAHE
+        cv::Mat equalized;
+        clahe->apply(labChannels[0], labChannels[0]);
+
 
         // Merge the Lab channels back
         cv::Mat equalizedLabImage;
@@ -224,34 +256,14 @@ struct Utils
      * @param img_in Input Image
      * @param img_bin_adaptive Output Image
      */
-    static void AdaptiveThresh(const cv::Mat &img_in, cv::Mat &img_bin_adaptive)
+    static void AdaptiveThresh(const cv::Mat &img_in, cv::Mat &img_bin_adaptive,int block_size, int c)
     {
-        int block_size = 11; // it works in the range [40, 100] and beyond
-        int C = 2.0;         // it works in the range [-40, 0]
-        cv::adaptiveThreshold(img_in, img_bin_adaptive, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, block_size, C);
-        ipa::imshow("Adaptive binarization", img_bin_adaptive, true, 2.0f);
+  
+        cv::adaptiveThreshold(img_in, img_bin_adaptive, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, block_size, c);
+        //ipa::imshow("Adaptive binarization", img_bin_adaptive, true, 2.0f);
     }
-
-    /**
-     * @brief Triangular Threshold
-     *
-     * @param img_in Input Image
-     * @param img_bin_triangle Output Image
-     */
-    static void TriangularThresh(const cv::Mat &img_in, cv::Mat &img_bin_triangle)
-    {
-        int T_triangle = ucas::getTriangleAutoThreshold(ucas::histogram(img_in));
-        cv::threshold(img_in, img_bin_triangle, T_triangle, 255, cv::THRESH_BINARY);
-        ipa::imshow("Triangle binarization", img_bin_triangle, true, 2.0f);
-    }
-
-    /**
-     * @brief RegioN Growing on HSV Color Space
-     *
-     * @param img_in Input Image
-     * @param segmentedImage Output Image
-     */
-    static void RegionGrowingHSV(cv::Mat &img_in, cv::Mat &segmentedImage)
+    
+    static void RegionGrowingHSV(cv::Mat & img_in, cv::Mat& seeds, cv::Mat & segmentedImage)
     {
         cv::Mat hlsImage;
         cv::cvtColor(img_in, hlsImage, cv::COLOR_BGR2HSV);
@@ -268,40 +280,26 @@ struct Utils
         cv::inRange(hueImage, cv::Scalar(minHueValue), cv::Scalar(maxHueValue), hueBinary1);
 
         cv::Mat hueBinary2;
-        cv::inRange(hueImage, cv::Scalar(150), cv::Scalar(180), hueBinary2);
+        cv::inRange(hueImage, cv::Scalar(160), cv::Scalar(180), hueBinary2);
 
         cv::Mat hueBinary;
         cv::bitwise_or(hueBinary1, hueBinary2, hueBinary);
-        ipa::imshow("huebin", hueBinary, true, 0.5f);
+
+    //    ipa::imshow("huebin", hueBinary, true, 0.5f);
 
         cv::imwrite(std::string(IMAGES_PATH) + "/hue.jpg", hueBinary);
 
-        // Divide the binary image into 16x16 sub-regions and calculate seeds for saturation image
-        cv::Mat seeds = cv::Mat::zeros(hueBinary.size(), CV_8UC1); // Initialize seeds matrix with zeros
-
-        for (int y = 8; y < hueBinary.rows - 20; y += 16)
-        {
-            for (int x = 8; x < hueBinary.cols - 20; x += 16)
-            {
-                cv::Rect roi(x - 8, y - 8, 16, 16);
-                cv::Mat subRegion = hueBinary(roi);
-                if (cv::countNonZero(subRegion) > (16 * 16 / 3))
-                {
-                    seeds.at<uchar>(y, x) = 255;
-                }
-            }
-        }
-
+      
         cv::Mat binarySaturation;
 
         // Calculate the median value of the saturation channel
-        double medianValue = Utils::calculateMedian(hlsChannels[1]);
+        double medianValue = Utils::Median(hlsChannels[1]);
 
-        cv::threshold(hlsChannels[1], binarySaturation, 50, 255, cv::THRESH_BINARY);
-        cv::imwrite(std::string(IMAGES_PATH) + "/sat.jpg", binarySaturation);
+        //  cv::threshold(hlsChannels[1], binarySaturation, 20, 255, cv::THRESH_BINARY);
+          //cv::imwrite(std::string(IMAGES_PATH) + "/sat.jpg", binarySaturation);
 
-        //  AdaptiveThresh(hlsChannels[1], binarySaturation);
-        ipa::imshow("prova", binarySaturation, true, 0.5f);
+        AdaptiveThresh(hlsChannels[1], binarySaturation,71,2);
+      //  ipa::imshow("prova", binarySaturation, true, 0.5f);
         cv::Mat seeds_prev;
         cv::Mat predicate = binarySaturation & hueBinary;
         int i = 0;
@@ -311,42 +309,20 @@ struct Utils
 
             cv::Mat candidates_img;
             cv::dilate(seeds, candidates_img,
-                       cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+                cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
             candidates_img = candidates_img - seeds;
 
             seeds += candidates_img & predicate;
 
             i++;
-            //  ipa::imshow("Growing in progress", seeds, true, 0.5);
-            // cv::waitKey(10);
-        } while (cv::countNonZero(seeds - seeds_prev) && i < 20);
+        } while (cv::countNonZero(seeds - seeds_prev) && i<60);
 
         segmentedImage = seeds;
 
-        //  cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
-        //                  cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
-
-        ipa::imshow("segmented", segmentedImage, true, 0.5f);
 
         cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
     }
 
-    /**
-     * @brief Get the Rect Contours object
-     *
-     * @param rect Input Rectangle
-     * @return std::vector<cv::Point>  Rect Vertices Vector
-     */
-    static std::vector<cv::Point> getRectContours(cv::Rect rect)
-    {
-        std::vector<cv::Point> tmp;
-        tmp.push_back(cv::Point(rect.x, rect.y));
-        tmp.push_back(cv::Point(rect.x + rect.width, rect.y));
-        tmp.push_back(cv::Point(rect.x + rect.width, rect.y + rect.height));
-        tmp.push_back(cv::Point(rect.x, rect.y + rect.height));
-
-        return tmp;
-    }
 
     /**
      * @brief Intersection Over Union
@@ -371,4 +347,37 @@ struct Utils
 
         return (areaOfOverlap / areaOfUnion);
     }
+   
+    static cv::Rect verticesToRect(std::vector<cv::Point> vertices) {
+
+        // Trova i valori x e y minimi e massimi tra i vertici
+        int minX = std::min({ vertices[0].x, vertices[1].x, vertices[2].x, vertices[3].x });
+        int minY = std::min({ vertices[0].y, vertices[1].y, vertices[2].y, vertices[3].y });
+        int maxX = std::max({ vertices[0].x, vertices[1].x, vertices[2].x, vertices[3].x });
+        int maxY = std::max({ vertices[0].y, vertices[1].y, vertices[2].y, vertices[3].y });
+
+        // Calcola larghezza e altezza del rettangolo
+        int width = maxX - minX;
+        int height = maxY - minY;
+
+        // Crea e restituisci il rettangolo
+        return cv::Rect(minX, minY, width, height);
+    }
+
+    static bool circleContainsRotatedRect(const cv::Point2f& center, float radius, const cv::RotatedRect& rotatedRect) {
+        // Extract the vertices of the rotated rectangle
+        cv::Point2f vertices[4];
+        rotatedRect.points(vertices);
+
+        // Check if all four vertices of the rotated rectangle are within the circle
+        for (const auto& vertex : vertices) {
+            float distance = cv::norm(vertex - center);
+            if (distance > radius+0.5) {
+                return false; // If any vertex is outside the circle, return false
+            }
+        }
+
+        return true; // If all vertices are within the circle, return true
+    }
+
 };
