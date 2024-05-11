@@ -25,7 +25,11 @@ struct CoreFunctions
        Utils::HistogramLabeq(img_in, img_eq);
   
        Utils::findRectangles(img_eq, contours);
+
        
+// //------------------------------------------------------------------------------
+// //======================= ROI CREATION =================================
+// //------------------------------------------------------------------------------
        std::vector<cv::Rect> ROIs;
        std::vector<cv::Rect> Rects;
        std::vector<cv::RotatedRect> MinRects;
@@ -62,6 +66,9 @@ struct CoreFunctions
           MinRects.push_back(min_bounding_rect);
       }
 
+// //------------------------------------------------------------------------------
+// //======================= REGION GROWING =================================
+// //------------------------------------------------------------------------------
       std::vector<cv::Rect> candidate_roi;
       std::vector<cv::Rect> candidate_rects;
       std::vector<cv::RotatedRect> candidate_min_rects;
@@ -129,8 +136,10 @@ struct CoreFunctions
       }
  
 
-    //hough
 
+// //------------------------------------------------------------------------------
+// //======================= HOUGH CIRCLES =================================
+// //------------------------------------------------------------------------------
       for (size_t k = 0; k < candidate_roi.size(); k++) {
 
           cv::Mat img_roi = img_eq(candidate_roi[k]).clone();
