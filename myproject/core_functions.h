@@ -68,14 +68,11 @@ struct CoreFunctions
 
       for (size_t k = 0; k < ROIs.size(); k++) {
 
-
           cv::Mat img_roi = img_eq(ROIs[k]).clone();
           cv::Mat roi_gray;
           cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
           std::vector<cv::Vec3f> circles;
           cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
-
-
 
           cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
 

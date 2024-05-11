@@ -11,6 +11,13 @@
 #define IMAGES_PATH "briaDataSet"
 #endif
 
+enum DET_LABEL
+{
+	TP,
+	FP,
+	FN
+};
+
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
 float min_circularity = 0.6f; // filter parameter: minimum circularity normalized
@@ -23,6 +30,11 @@ float max_area_perc = 0.5f;    // filter parameter: maximum area of signs extres
 
 int minHueValue = 0;  // filter parameter: minimum value of Hue to pick the red color
 int maxHueValue = 20; // filter parameter: maximum value of Hue to pick the red color
+
+int min_rect_area = 800;
+int max_rect_area = 12000;
+
+float min_rectangularity = 0.75;
 
 std::vector<std::vector<cv::Point>> realSignContours;     // contours vector of real signs, taken from Json
 std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
@@ -67,7 +79,7 @@ struct Utils
             [](const std::vector<cv::Point>& object)
             {
                 double area = cv::contourArea(object);
-                return area<800 ||area > 12000;
+                return area < min_rect_area ||area > max_rect_area;
             }
         ), contours.end());
         
@@ -86,7 +98,7 @@ struct Utils
 
                 float bounding_rect_area = width * height;
 
-                return area / bounding_rect_area < 0.75;
+                return area / bounding_rect_area < min_rectangularity;
             }
         ), contours.end());
 

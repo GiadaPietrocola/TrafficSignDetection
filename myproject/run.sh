@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 cd ~/Desktop
 echo "$PWD"
-cd builds
+cd Builds
 echo "$PWD"
 make
 cd bin

@@ -15,7 +15,7 @@ int main()
 
 	//ipa::imshow("Original image", img, true, 0.5f);
 
-//	CoreFunctions::Preprocessing(img);
+	//CoreFunctions::Preprocessing(img);
 
 	CoreFunctions::JsonHandler(false);
 	return EXIT_SUCCESS;
