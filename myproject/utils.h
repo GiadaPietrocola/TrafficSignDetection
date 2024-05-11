@@ -380,4 +380,14 @@ struct Utils
         return true; // If all vertices are within the circle, return true
     }
 
+    static std::vector<cv::Point> getRectContours(cv::Rect rect)
+    {
+        std::vector<cv::Point> tmp;
+        tmp.push_back(cv::Point(rect.x, rect.y));
+        tmp.push_back(cv::Point(rect.x + rect.width, rect.y));
+        tmp.push_back(cv::Point(rect.x + rect.width, rect.y + rect.height));
+        tmp.push_back(cv::Point(rect.x, rect.y + rect.height));
+        return tmp;
+    }
+
 };
