@@ -402,4 +402,164 @@ struct Utils
         return tmp;
     }
 
+    static cv::Mat computeGLCM(const cv::Mat& img, int distance, int angle)
+    {
+        if (img.channels() != 1)
+            throw "Only single-channel images are supported";
+        if (img.depth() != CV_8U)
+            throw "Only 8-bits images are supported";
+
+        int numLevels = 256;
+        int rows = img.rows;
+        int cols = img.cols;
+
+        cv::Mat glcm = cv::Mat::zeros(numLevels, numLevels, CV_32FC1);
+
+        int dr = ucas::round(distance * std::sin(angle * CV_PI / 180));
+        int dc = ucas::round(distance * std::cos(angle * CV_PI / 180));
+
+        int count = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                int r2 = i + dr;
+                int c2 = j + dc;
+
+                if (r2 >= 0 && r2 < rows && c2 >= 0 && c2 < cols)
+                {
+                    glcm.at<float>(img.at<uchar>(i, j), img.at<uchar>(r2, c2))++;
+                    count++;
+                }
+            }
+        }
+
+        glcm /= count;
+
+        return glcm;
+    }
+
+    static float computeGLCMCorrelation(const cv::Mat& glcm)
+    {
+        int numLevels = glcm.rows;
+
+        float mr = 0, mc = 0;
+        float sr = 0, sc = 0;
+
+        for (int i = 0; i < numLevels; i++)
+            for (int j = 0; j < numLevels; j++)
+            {
+                mr += i * glcm.at<float>(i, j);
+                mc += j * glcm.at<float>(i, j);
+            }
+
+        for (int i = 0; i < numLevels; i++)
+            for (int j = 0; j < numLevels; j++)
+            {
+                sr += (i - mr) * (i - mr) * glcm.at<float>(i, j);
+                sc += (j - mc) * (j - mc) * glcm.at<float>(i, j);
+            }
+        sr = std::sqrt(sr);
+        sc = std::sqrt(sc);
+
+        float correlation = 0.0;
+        for (int i = 0; i < numLevels; ++i)
+        {
+            for (int j = 0; j < numLevels; ++j)
+            {
+                float p = glcm.at<float>(i, j);
+                correlation += ((i - mr) * (j - mc) * p) / (sr * sc);
+            }
+        }
+
+        return correlation;
+    }
+
+    static float computeGLCMContrast(const cv::Mat& glcm)
+    {
+        float contrast = 0;
+
+        int numLevels = glcm.rows;
+
+        for (int i = 0; i < numLevels; i++)
+            for (int j = 0; j < numLevels; j++)
+                contrast += (i - j) * (i - j) * glcm.at<float>(i, j);
+
+        return contrast;
+    }
+
+
+    static void features(const cv::Mat& img_in, std::string filename) {
+
+        cv::Mat hlsImage;
+        cv::cvtColor(img_in, hlsImage, cv::COLOR_BGR2HSV);
+
+        // Split the IHLS image into individual channels
+        std::vector<cv::Mat> hlsChannels;
+        cv::split(hlsImage, hlsChannels);
+
+        // Parameters for GLCM computation
+        int distance = 1; // Distance parameter for GLCM
+        std::vector<int> angles = { 0, 45, 90, 135 }; // Angles for GLCM computation
+
+        // Compute GLCM for each angle
+        std::vector<cv::Mat> glcms;
+
+        // Compute GLCM features
+        std::vector<float> correlations;
+        std::vector<float> contrasts;
+
+        for (int i = 0; i < 3; i++) {
+
+            for (int angle : angles) {
+                glcms.push_back(computeGLCM(hlsChannels[i], distance, angle));
+            }
+
+            for (const cv::Mat& glcm : glcms) {
+                float correlation = computeGLCMCorrelation(glcm);
+                float contrast = computeGLCMContrast(glcm);
+                correlations.push_back(correlation);
+                contrasts.push_back(contrast);
+            }
+
+        }
+
+        // Normalize GLCM features
+        normalizeFeatures(correlations);
+        normalizeFeatures(contrasts);
+
+        
+
+        // Save GLCM features to a CSV file
+        std::ofstream file(filename, std::ios::app);
+        if (file.is_open()) {
+            for (float correlation : correlations) {
+                file << correlation << ",";
+            }
+            for (float contrast : contrasts) {
+                file << contrast << ",";
+            }
+            file << std::endl;
+            file.close();
+            std::cout << "Features successfully saved to glcm_features.csv" << std::endl;
+        }
+        else {
+            std::cerr << "Unable to open file to save GLCM features." << std::endl;
+            return;
+        }
+
+        return;
+    }
+        
+    // Function to normalize a vector of features using min-max scaling
+    static void normalizeFeatures(std::vector<float>& features) {
+        // Find min and max values
+        float min_val = *std::min_element(features.begin(), features.end());
+        float max_val = *std::max_element(features.begin(), features.end());
+
+        // Normalize each feature
+        for (float& feature : features) {
+            feature = (feature - min_val) / (max_val - min_val);
+        }
+    }
 };

@@ -205,6 +205,28 @@ struct CoreFunctions
 
                   candidateSignCotours.push_back(Utils::getRectContours(bounding));
                   cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
+                  cv::Mat roi = img_eq(bounding).clone();
+                  
+
+
+                  for (int i = 0; i < realSignContours.size(); i++)
+                  {
+
+                      float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
+                          bounding);
+                      if (intersection > 0.5)
+                      {
+
+                          Utils::features(roi, "true_glcm_features.csv");
+                      }
+                      else {
+                          Utils::features(roi, "false_glcm_features.csv");
+                      }
+
+                  }
+               
+
+
               }
 
               
