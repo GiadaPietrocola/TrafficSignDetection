@@ -206,6 +206,7 @@ struct CoreFunctions
                   candidateSignCotours.push_back(Utils::getRectContours(bounding));
                   cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
                   cv::Mat roi = img_eq(bounding).clone();
+                 // ipa::imshow("roi", roi, true);
                   
 
 
@@ -214,6 +215,7 @@ struct CoreFunctions
 
                       float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
                           bounding);
+      
                       if (intersection > 0.5)
                       {
 

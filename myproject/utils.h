@@ -475,6 +475,20 @@ struct Utils
         return correlation;
     }
 
+    static float computeGLCMEnergy(const cv::Mat& glcm) {
+        int numLevels = glcm.rows;
+        float energy = 0.0;
+
+        for (int i = 0; i < numLevels; ++i) {
+            for (int j = 0; j < numLevels; ++j) {
+                float p = glcm.at<float>(i, j);
+                energy += p * p;
+            }
+        }
+
+        return energy;
+    }
+
     static float computeGLCMContrast(const cv::Mat& glcm)
     {
         float contrast = 0;
@@ -488,11 +502,35 @@ struct Utils
         return contrast;
     }
 
+    static float computeGLCMHomogeneity(const cv::Mat& glcm) {
+    int numLevels = glcm.rows;
+    float homogeneity = 0.0;
+
+    for (int i = 0; i < numLevels; ++i) {
+        for (int j = 0; j < numLevels; ++j) {
+            float p = glcm.at<float>(i, j);
+            homogeneity += p / (1.0 + std::abs(i - j));
+        }
+    }
+
+    return homogeneity;
+}
 
     static void features(const cv::Mat& img_in, std::string filename) {
 
+        // Define the target size for resizing
+        cv::Size targetSize(200, 200); // Width x Height
+
+        // Perform resizing
+        cv::Mat resizedImage;
+        cv::resize(img_in, resizedImage, targetSize, cv::INTER_LINEAR); // You can choose different interpolation methods
+
+        cv::GaussianBlur(resizedImage, resizedImage, cv::Size(3, 3), 0.5);
+
+       // ipa::imshow("resize", resizedImage, true);
+
         cv::Mat hlsImage;
-        cv::cvtColor(img_in, hlsImage, cv::COLOR_BGR2HSV);
+        cv::cvtColor(resizedImage, hlsImage, cv::COLOR_BGR2HSV);
 
         // Split the IHLS image into individual channels
         std::vector<cv::Mat> hlsChannels;
@@ -517,7 +555,7 @@ struct Utils
 
             for (const cv::Mat& glcm : glcms) {
                 float correlation = computeGLCMCorrelation(glcm);
-                float contrast = computeGLCMContrast(glcm);
+                float contrast = computeGLCMEnergy(glcm);
                 correlations.push_back(correlation);
                 contrasts.push_back(contrast);
             }
