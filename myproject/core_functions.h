@@ -208,6 +208,9 @@ struct CoreFunctions
                   cv::Mat roi = img_eq(bounding).clone();
                  // ipa::imshow("roi", roi, true);
                   
+                  
+                  std::vector<float> roiFeatures;
+                  Utils::features(roi, roiFeatures);
 
 
                   for (int i = 0; i < realSignContours.size(); i++)
@@ -215,19 +218,17 @@ struct CoreFunctions
 
                       float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
                           bounding);
-      
+                      
                       if (intersection > 0.5)
                       {
-
-                          Utils::features(roi, "true_glcm_features.csv");
+                          trueFeatures.push_back(roiFeatures);
                       }
                       else {
-                          Utils::features(roi, "false_glcm_features.csv");
+                          falseFeatures.push_back(roiFeatures);
                       }
 
                   }
-               
-
+             
 
               }
 
@@ -331,6 +332,11 @@ struct CoreFunctions
 
             cv::destroyAllWindows();
         }
+        Utils::normalizeFeatures(falseFeatures);
+        Utils::normalizeFeatures(trueFeatures);
+        Utils::writeCsv(falseFeatures, "false_glcm_features4.csv");
+        Utils::writeCsv(trueFeatures, "true_glcm_features4.csv");
+
         printf("Number of ok: %d on %d\n", ok, total_number);
         int percentual = (ok / total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);

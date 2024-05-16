@@ -6,6 +6,8 @@
 // include my project functions
 #include "functions.h"
 
+#include <numeric>
+
 // for vscode work
 #ifndef IMAGES_PATH
 #define IMAGES_PATH "briaDataSet"
@@ -38,6 +40,9 @@ float min_rectangularity = 0.75;
 
 std::vector<std::vector<cv::Point>> realSignContours;     // contours vector of real signs, taken from Json
 std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
+
+std::vector<std::vector<float>> trueFeatures;
+std::vector<std::vector<float>> falseFeatures;
 
 std::string noEntryLabelJson = "regulatory--no-entry--g1";
 
@@ -516,7 +521,9 @@ struct Utils
     return homogeneity;
 }
 
-    static void features(const cv::Mat& img_in, std::string filename) {
+    static void features(const cv::Mat& img_in, std::vector<float> &features) {
+
+       
 
         // Define the target size for resizing
         cv::Size targetSize(200, 200); // Width x Height
@@ -525,79 +532,94 @@ struct Utils
         cv::Mat resizedImage;
         cv::resize(img_in, resizedImage, targetSize, cv::INTER_LINEAR); // You can choose different interpolation methods
 
-        cv::GaussianBlur(resizedImage, resizedImage, cv::Size(3, 3), 0.5);
+        cv::GaussianBlur(resizedImage, resizedImage, cv::Size(5, 5), 0.5);
 
        // ipa::imshow("resize", resizedImage, true);
 
-        cv::Mat hlsImage;
-        cv::cvtColor(resizedImage, hlsImage, cv::COLOR_BGR2HSV);
+        cv::Mat hsvImage;
+        cv::cvtColor(resizedImage, hsvImage, cv::COLOR_BGR2HSV);
 
         // Split the IHLS image into individual channels
-        std::vector<cv::Mat> hlsChannels;
-        cv::split(hlsImage, hlsChannels);
+        std::vector<cv::Mat> hsvChannels;
+        cv::split(hsvImage, hsvChannels);
 
         // Parameters for GLCM computation
         int distance = 1; // Distance parameter for GLCM
-        std::vector<int> angles = { 0, 45, 90, 135 }; // Angles for GLCM computation
-
-        // Compute GLCM for each angle
-        std::vector<cv::Mat> glcms;
+        std::vector<int> angles = { 0}; // Angles for GLCM computation
 
         // Compute GLCM features
-        std::vector<float> correlations;
-        std::vector<float> contrasts;
+      
 
         for (int i = 0; i < 3; i++) {
+            
+            // Compute GLCM for each angle
+            std::vector<cv::Mat> glcms;
 
             for (int angle : angles) {
-                glcms.push_back(computeGLCM(hlsChannels[i], distance, angle));
+                glcms.push_back(computeGLCM(hsvChannels[i], distance, angle));
             }
 
             for (const cv::Mat& glcm : glcms) {
                 float correlation = computeGLCMCorrelation(glcm);
-                float contrast = computeGLCMEnergy(glcm);
-                correlations.push_back(correlation);
-                contrasts.push_back(contrast);
+                float contrast = computeGLCMContrast(glcm);
+                features.push_back(correlation);
+                features.push_back(contrast);
             }
+           
+        }    
+       
 
-        }
-
-        // Normalize GLCM features
-        normalizeFeatures(correlations);
-        normalizeFeatures(contrasts);
-
+        return;
+    }
         
-
+    static void writeCsv(const std::vector<std::vector<float>>& feature, std::string filename) {
         // Save GLCM features to a CSV file
         std::ofstream file(filename, std::ios::app);
         if (file.is_open()) {
-            for (float correlation : correlations) {
-                file << correlation << ",";
+
+            for (int i = 0; i < feature.size(); i++) {
+                for (int j = 0; j < feature[i].size(); j++) {
+                    file << feature[i][j] << ",";
+                }
+                file << std::endl;
             }
-            for (float contrast : contrasts) {
-                file << contrast << ",";
-            }
-            file << std::endl;
+                
             file.close();
-            std::cout << "Features successfully saved to glcm_features.csv" << std::endl;
+            //     std::cout << "Features successfully saved to glcm_features.csv" << std::endl;
         }
         else {
             std::cerr << "Unable to open file to save GLCM features." << std::endl;
             return;
         }
-
-        return;
     }
-        
-    // Function to normalize a vector of features using min-max scaling
-    static void normalizeFeatures(std::vector<float>& features) {
-        // Find min and max values
-        float min_val = *std::min_element(features.begin(), features.end());
-        float max_val = *std::max_element(features.begin(), features.end());
+    // Normalize each column (feature) independently using min-max normalization
+    void static normalizeFeatures(std::vector<std::vector<float>>& features) {
+        // Vector to store minimum and maximum values for each feature (column)
+        std::vector<std::pair<float, float>> minMaxValues(features.size(), { std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest() });
 
-        // Normalize each feature
-        for (float& feature : features) {
-            feature = (feature - min_val) / (max_val - min_val);
+        // Find the minimum and maximum values for each column
+        for (size_t row = 0; row < features.size(); ++row) {
+            for (size_t col = 0; col < features[row].size(); ++col) {
+                minMaxValues[col].first = std::min(minMaxValues[col].first, features[row][col]);
+                minMaxValues[col].second = std::max(minMaxValues[col].second, features[row][col]);
+            }
+        }
+
+        // Normalize each element in each feature (column)
+        for (size_t row = 0; row < features.size(); ++row) {
+            for (size_t col = 0; col < features[row].size(); ++col) {
+                float minVal = minMaxValues[col].first;
+                float maxVal = minMaxValues[col].second;
+                // Apply min-max normalization formula: (value - min) / (max - min)
+                if (maxVal != minVal) {
+                    features[row][col] = (features[row][col] - minVal) / (maxVal - minVal);
+                }
+                else {
+                    // Handle division by zero if minVal == maxVal
+                    features[row][col] = 0.0f;
+                }
+            }
         }
     }
+
 };
