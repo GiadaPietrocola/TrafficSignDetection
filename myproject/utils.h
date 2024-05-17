@@ -519,25 +519,105 @@ struct Utils
     }
 
     return homogeneity;
-}
+    }
+
+    static std::vector<float> HogDescriptors(const cv::Mat& img_in) {
+        
+        cv::Mat resized;
+        // Resize the image if needed
+          cv::resize(img_in, resized, cv::Size(64, 64));
+
+
+          cv::HOGDescriptor hog(
+              cv::Size(64, 64), // winSize
+              cv::Size(16, 16), // blockSize
+              cv::Size(8, 8),   // blockStride
+              cv::Size(8, 8),   // cellSize
+              9,                 // nbins
+              cv::NORM_L2
+          );
+
+          /*
+        // Set up HOG descriptor
+        cv::HOGDescriptor hog(
+            cv::Size(128, 128), // winSize
+            cv::Size(16, 16),   // blockSize
+            cv::Size(8, 8),     // blockStride
+            cv::Size(8, 8),     // cellSize
+            9,                  // nbins
+            1,                  // derivAperture
+            -1,                 // winSigma
+            cv::HOGDescriptor::L2Hys, // histogramNormType
+            0.2,                // L2HysThresh
+            false,              // gammaCorrection
+            64,                 // nlevels
+            true                // signedGradient
+        );
+       */
+        std::vector<float> hogFeatures;
+        std::vector<cv::Point> locations;
+        hog.compute(resized, hogFeatures, cv::Size(8, 8), cv::Size(0, 0), locations);
+
+        // Normalize HOG descriptors
+       // cv::Mat hogDescriptorsMat(hogFeatures); // Convert to a matrix
+       // cv::Mat normalizedHogDescriptorsMat;
+       // cv::normalize(hogDescriptorsMat, normalizedHogDescriptorsMat, 1.0, 0, cv::NORM_L2);
+
+        // Convert the normalized HOG descriptors back to a vector
+       // std::vector<float> normalizedHogFeatures(normalizedHogDescriptorsMat.begin<float>(), normalizedHogDescriptorsMat.end<float>());
+
+
+        return hogFeatures;
+    }
+
+
+    // Function to compute LBP features
+    static std::vector<float> computeLBP(const cv::Mat& src) {
+        cv::Mat lbpImage;
+        lbpImage.create(src.size(), CV_8UC1);
+       
+        // LBP calculation
+        for (int y = 1; y < src.rows - 1; y++) {
+            for (int x = 1; x < src.cols - 1; x++) {
+                uchar center = src.at<uchar>(y, x);
+                uchar code = 0;
+                code |= (src.at<uchar>(y - 1, x - 1) > center) << 7;
+                code |= (src.at<uchar>(y - 1, x) > center) << 6;
+                code |= (src.at<uchar>(y - 1, x + 1) > center) << 5;
+                code |= (src.at<uchar>(y, x + 1) > center) << 4;
+                code |= (src.at<uchar>(y + 1, x + 1) > center) << 3;
+                code |= (src.at<uchar>(y + 1, x) > center) << 2;
+                code |= (src.at<uchar>(y + 1, x - 1) > center) << 1;
+                code |= (src.at<uchar>(y, x - 1) > center) << 0;
+                lbpImage.at<uchar>(y, x) = code;
+            }
+        }
+
+        // Calculate histogram
+        std::vector<float> hist(256, 0);
+        for (int y = 0; y < lbpImage.rows; y++) {
+            for (int x = 0; x < lbpImage.cols; x++) {
+                hist[lbpImage.at<uchar>(y, x)]++;
+            }
+        }
+
+        return hist;
+    }
+
 
     static void features(const cv::Mat& img_in, std::vector<float> &features) {
 
        
-
         // Define the target size for resizing
         cv::Size targetSize(200, 200); // Width x Height
 
-        // Perform resizing
-        cv::Mat resizedImage;
-        cv::resize(img_in, resizedImage, targetSize, cv::INTER_LINEAR); // You can choose different interpolation methods
 
-        cv::GaussianBlur(resizedImage, resizedImage, cv::Size(5, 5), 0.5);
+        cv::GaussianBlur(img_in, img_in, cv::Size(5, 5), 0.5);
 
        // ipa::imshow("resize", resizedImage, true);
 
         cv::Mat hsvImage;
-        cv::cvtColor(resizedImage, hsvImage, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img_in, hsvImage, cv::COLOR_BGR2HSV);
 
         // Split the IHLS image into individual channels
         std::vector<cv::Mat> hsvChannels;
@@ -562,14 +642,24 @@ struct Utils
             for (const cv::Mat& glcm : glcms) {
                 float correlation = computeGLCMCorrelation(glcm);
                 float contrast = computeGLCMContrast(glcm);
-                features.push_back(correlation);
-                features.push_back(contrast);
+               // features.push_back(correlation);
+                //features.push_back(contrast);
             }
            
         }    
-       
+        cv::Mat gray;
 
-        return;
+        cv::cvtColor(img_in, gray, cv::COLOR_RGB2GRAY);
+
+        std::vector<float> hogFeatures = HogDescriptors(gray);
+        // Compute LBP features
+        
+        std::vector<float> lbpFeatures = computeLBP(gray);
+
+        // Combine HOG and LBP features
+       // features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
+        features.insert(features.end(), lbpFeatures.begin(), lbpFeatures.end());
+   
     }
         
     static void writeCsv(const std::vector<std::vector<float>>& feature, std::string filename) {

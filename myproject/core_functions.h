@@ -206,7 +206,7 @@ struct CoreFunctions
                   candidateSignCotours.push_back(Utils::getRectContours(bounding));
                   cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
                   cv::Mat roi = img_eq(bounding).clone();
-                 // ipa::imshow("roi", roi, true);
+                  //ipa::imshow("roi", roi, true);
                   
                   
                   std::vector<float> roiFeatures;
@@ -334,8 +334,8 @@ struct CoreFunctions
         }
         Utils::normalizeFeatures(falseFeatures);
         Utils::normalizeFeatures(trueFeatures);
-        Utils::writeCsv(falseFeatures, "false_glcm_features4.csv");
-        Utils::writeCsv(trueFeatures, "true_glcm_features4.csv");
+        Utils::writeCsv(falseFeatures, "false_glcm_features8.csv");
+        Utils::writeCsv(trueFeatures, "true_glcm_features8.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         int percentual = (ok / total_number);
