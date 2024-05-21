@@ -18,7 +18,7 @@ struct CoreFunctions
 
     static void Preprocessing(cv::Mat &img_in, bool show)
     {
-       
+        cv::Mat img_copy = img_in.clone();
        std::vector< std::vector<cv::Point> > contours;
 
        cv::Mat img_eq;
@@ -143,7 +143,7 @@ struct CoreFunctions
       for (size_t k = 0; k < candidate_roi.size(); k++) {
 
           cv::Mat img_roi = img_eq(candidate_roi[k]).clone();
-
+          
        //   ipa::imshow("a", img_roi, true);
           cv::Mat roi_gray;
           cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
@@ -204,7 +204,7 @@ struct CoreFunctions
                   cv::Rect bounding(rect_x, rect_y, rect_right - rect_x, rect_bottom - rect_y);
 
                   candidateSignCotours.push_back(Utils::getRectContours(bounding));
-                  cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
+                  //cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
                   cv::Mat roi = img_eq(bounding).clone();
                   //ipa::imshow("roi", roi, true);
                   
@@ -212,6 +212,7 @@ struct CoreFunctions
                   std::vector<float> roiFeatures;
                   Utils::features(roi, roiFeatures);
 
+                 
 
                   for (int i = 0; i < realSignContours.size(); i++)
                   {
@@ -222,22 +223,25 @@ struct CoreFunctions
                       if (intersection > 0.5)
                       {
                           trueFeatures.push_back(roiFeatures);
+                          Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)7.sco", trueFeatures.size(), bounding);
                       }
                       else {
                           falseFeatures.push_back(roiFeatures);
+                          Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)7.sco", falseFeatures.size(), bounding);
                       }
-
+                      
                   }
-             
+                 
 
               }
-
+              
               
           }
-
+         
       }
 
-     // ipa::imshow("img", img_in, true);
+      ipa::imshow("img", img_copy, true);
+      //ipa::imshow("img", img_in, true);
     }
 
 
@@ -332,13 +336,15 @@ struct CoreFunctions
 
             cv::destroyAllWindows();
         }
-        Utils::normalizeFeatures(falseFeatures);
-        Utils::normalizeFeatures(trueFeatures);
-        Utils::writeCsv(falseFeatures, "false_glcm_features8.csv");
-        Utils::writeCsv(trueFeatures, "true_glcm_features8.csv");
+       // Utils::normalizeFeatures(falseFeatures);
+       // Utils::normalizeFeatures(trueFeatures);
+        Utils::writeCsv(falseFeatures, "false_glcm_features9.csv");
+        Utils::writeCsv(trueFeatures, "true_glcm_features9.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         int percentual = (ok / total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);
+
+        
     }
 };

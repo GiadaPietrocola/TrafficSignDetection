@@ -44,7 +44,9 @@ std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of 
 std::vector<std::vector<float>> trueFeatures;
 std::vector<std::vector<float>> falseFeatures;
 
+
 std::string noEntryLabelJson = "regulatory--no-entry--g1";
+
 
 struct Utils
 {
@@ -601,6 +603,14 @@ struct Utils
             }
         }
 
+        int max = 0;
+        for (int i = 0; i < hist.size(); i++) {
+            if (hist[i] > max)
+                max = hist[i];
+        }
+        for (int i = 0; i < hist.size(); i++) {
+            hist[i] /= max;
+        }
         return hist;
     }
 
@@ -625,7 +635,7 @@ struct Utils
 
         // Parameters for GLCM computation
         int distance = 1; // Distance parameter for GLCM
-        std::vector<int> angles = { 0}; // Angles for GLCM computation
+        std::vector<int> angles = {0,45,90,135}; // Angles for GLCM computation
 
         // Compute GLCM features
       
@@ -642,8 +652,8 @@ struct Utils
             for (const cv::Mat& glcm : glcms) {
                 float correlation = computeGLCMCorrelation(glcm);
                 float contrast = computeGLCMContrast(glcm);
-               // features.push_back(correlation);
-                //features.push_back(contrast);
+                features.push_back(correlation);
+                features.push_back(contrast);
             }
            
         }    
@@ -657,8 +667,8 @@ struct Utils
         std::vector<float> lbpFeatures = computeLBP(gray);
 
         // Combine HOG and LBP features
-       // features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
-        features.insert(features.end(), lbpFeatures.begin(), lbpFeatures.end());
+        //features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
+        //features.insert(features.end(), lbpFeatures.begin(), lbpFeatures.end());
    
     }
         
@@ -712,4 +722,30 @@ struct Utils
         }
     }
 
+    static void ShowMachineLearningResults(cv::Mat& img_in, const std::string filename, int index, cv::Rect rectangle)
+    {
+    
+        std::ifstream file(filename);
+        std::string line;
+
+        if (!file.is_open()) {
+            std::cerr << "Error opening file: " << filename << std::endl;
+        }
+
+        // Skip the header line
+        std::getline(file, line);
+
+        // Read the rest of the lines
+        while (std::getline(file, line)) {
+            std::stringstream ss(line);
+            int sampleIndex;
+            float score;
+            ss >> sampleIndex >> score;
+            if (index== sampleIndex && score > 0.24) {
+                cv::rectangle(img_in, rectangle, cv::Scalar(255, 0, 0), 2);
+                cv::putText(img_in, std::to_string(score).substr(0, 6), cv::Point(rectangle.x+rectangle.width+10, rectangle.y + rectangle.height/2), cv::FONT_HERSHEY_SIMPLEX, 1.5, cv::Scalar(255, 0, 0), 3);
+
+            }
+        }
+    }
 };
