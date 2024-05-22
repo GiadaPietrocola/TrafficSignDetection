@@ -16,232 +16,252 @@ using namespace rapidjson;
 struct CoreFunctions
 {
 
-    static void Preprocessing(cv::Mat &img_in, bool show)
+    static void Pipeline(cv::Mat &img_in, bool show)
     {
         cv::Mat img_copy = img_in.clone();
-       std::vector< std::vector<cv::Point> > contours;
 
-       cv::Mat img_eq;
-       Utils::HistogramLabeq(img_in, img_eq);
-  
-       Utils::findRectangles(img_eq, contours);
+        cv::Mat preProcessedImg = Preprocessing(img_in);
 
-       
-// //------------------------------------------------------------------------------
-// //======================= ROI CREATION =================================
-// //------------------------------------------------------------------------------
-       std::vector<cv::Rect> ROIs;
-       std::vector<cv::Rect> Rects;
-       std::vector<cv::RotatedRect> MinRects;
-     
-       for (const auto& contour : contours) {
+        std::vector<std::vector<cv::Point>> contours;
 
-          // Get the bounding rectangle enclosing the contour
-          cv::Rect bounding_rect = cv::boundingRect(contour);
-          cv::RotatedRect min_bounding_rect = cv::minAreaRect(contour);
+        Utils::findRectangles(preProcessedImg, contours);
 
-          // Calculate the width and height of the bounding rectangle
-          int width = bounding_rect.width;
-          int height = bounding_rect.height;
+        // //------------------------------------------------------------------------------
+        // //======================= ROI CREATION =================================
+        // //------------------------------------------------------------------------------
+        ROIs.clear();
+        Rects.clear();
+        MinRects.clear();
 
-          // Center of the rectangle
-          cv::Point center(bounding_rect.x + width / 2, bounding_rect.y + height / 2);
+        PipeRoiCreation(img_copy, contours);
 
-          // Define the ROI
-          int roi_width = 2.5* width;
-          int roi_height = 2.5 * width;
+        // //------------------------------------------------------------------------------
+        // //======================= REGION GROWING =================================
+        // //------------------------------------------------------------------------------
+        candidate_roi.clear();
+        candidate_rects.clear();
+        candidate_min_rects.clear();
 
-          // Adjust ROI to ensure it remains within image bounds
-          int roi_x = std::max(0, center.x - roi_width / 2);
-          int roi_y = std::max(0, center.y - roi_height / 2);
-          int roi_right = std::min(img_in.cols - 1, roi_x + roi_width);
-          int roi_bottom = std::min(img_in.rows - 1, roi_y + roi_height);
+        PipeRegionGrowing(img_copy);
 
-          // Create ROI rect
-          cv::Rect ROI(roi_x, roi_y, roi_right - roi_x, roi_bottom - roi_y);
+        // //------------------------------------------------------------------------------
+        // //======================= HOUGH CIRCLES =================================
+        // //------------------------------------------------------------------------------
+        PipeHoughCircles(preProcessedImg);
 
-          // Add the ROI to the list
-          ROIs.push_back(ROI);
-          Rects.push_back(bounding_rect);
-          MinRects.push_back(min_bounding_rect);
-      }
+        // ipa::imshow("img", img_copy, true);
+        // ipa::imshow("img", img_in, true);
+    }
+    
+    static cv::Mat Preprocessing(cv::Mat &img_in)
+    {
+        cv::Mat img_eq;
+        Utils::HistogramLabeq(img_in, img_eq);
 
-// //------------------------------------------------------------------------------
-// //======================= REGION GROWING =================================
-// //------------------------------------------------------------------------------
-      std::vector<cv::Rect> candidate_roi;
-      std::vector<cv::Rect> candidate_rects;
-      std::vector<cv::RotatedRect> candidate_min_rects;
+        return img_eq;
+    }
+    static void PipeRoiCreation(cv::Mat &img_in, std::vector<std::vector<cv::Point>> contours)
+    {
+        for (const auto &contour : contours)
+        {
 
-      for (size_t k = 0; k < ROIs.size(); k++) {
+            // Get the bounding rectangle enclosing the contour
+            cv::Rect bounding_rect = cv::boundingRect(contour);
+            cv::RotatedRect min_bounding_rect = cv::minAreaRect(contour);
 
-          cv::Mat img_roi = img_eq(ROIs[k]).clone();
-          cv::Mat roi_gray;
-          cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
-          std::vector<cv::Vec3f> circles;
-          cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
+            // Calculate the width and height of the bounding rectangle
+            int width = bounding_rect.width;
+            int height = bounding_rect.height;
 
-          cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
+            // Center of the rectangle
+            cv::Point center(bounding_rect.x + width / 2, bounding_rect.y + height / 2);
 
-          // Assuming Rects[k] represents your rectangle
-          int centerX = Rects[k].x - ROIs[k].x + Rects[k].width / 2; // X coordinate of the center of the rectangle
-          int centerY = Rects[k].y - ROIs[k].y + Rects[k].height / 2; // Y coordinate of the center of the rectangle
+            // Define the ROI
+            int roi_width = 2.5 * width;
+            int roi_height = 2.5 * width;
 
-          // Check if adding seeds won't exceed image boundaries
-          if (centerY - 4 - Rects[k].height / 2 >= 0 && centerY - 4 - Rects[k].height / 2 < img_roi.rows) {
-              seeds.at<uchar>(centerY - 4 - Rects[k].height / 2, centerX) = 255; // Over the center
+            // Adjust ROI to ensure it remains within image bounds
+            int roi_x = std::max(0, center.x - roi_width / 2);
+            int roi_y = std::max(0, center.y - roi_height / 2);
+            int roi_right = std::min(img_in.cols - 1, roi_x + roi_width);
+            int roi_bottom = std::min(img_in.rows - 1, roi_y + roi_height);
 
-          }
+            // Create ROI rect
+            cv::Rect ROI(roi_x, roi_y, roi_right - roi_x, roi_bottom - roi_y);
 
-          if (centerY + 4 + Rects[k].height / 2 >= 0 && centerY + 4 + Rects[k].height / 2 < img_roi.rows) {
-              seeds.at<uchar>(centerY + 4 + Rects[k].height / 2, centerX) = 255; // Under the center
+            // Add the ROI to the list
+            ROIs.push_back(ROI);
+            Rects.push_back(bounding_rect);
+            MinRects.push_back(min_bounding_rect);
+        }
+    }
 
-          }
+    static void PipeRegionGrowing(cv::Mat &preProcessedImg)
+    {
+        for (size_t k = 0; k < ROIs.size(); k++)
+        {
 
-          if (centerX - 4 - Rects[k].width / 2 >= 0 && centerX - 8 - Rects[k].width / 2 < img_roi.cols) {
-              seeds.at<uchar>(centerY, centerX - 4 - Rects[k].width / 2) = 255; // Left of the center
-          }
+            cv::Mat img_roi = preProcessedImg(ROIs[k]).clone();
+            cv::Mat roi_gray;
+            cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
+            std::vector<cv::Vec3f> circles;
+            cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
-          if (centerX + 8 + Rects[k].width / 2 >= 0 && centerX + 8 + Rects[k].width / 2 < img_roi.cols) {
-              seeds.at<uchar>(centerY, centerX + 4 + +Rects[k].width / 2) = 255; // Right of the center
-          }
+            cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
 
-          //  ipa::imshow("seeds", seeds, true);
+            // Assuming Rects[k] represents your rectangle
+            int centerX = Rects[k].x - ROIs[k].x + Rects[k].width / 2;  // X coordinate of the center of the rectangle
+            int centerY = Rects[k].y - ROIs[k].y + Rects[k].height / 2; // Y coordinate of the center of the rectangle
 
-          cv::Mat segmentedImage;
+            // Check if adding seeds won't exceed image boundaries
+            if (centerY - 4 - Rects[k].height / 2 >= 0 && centerY - 4 - Rects[k].height / 2 < img_roi.rows)
+            {
+                seeds.at<uchar>(centerY - 4 - Rects[k].height / 2, centerX) = 255; // Over the center
+            }
 
-          Utils::RegionGrowingHSV(img_roi, seeds, segmentedImage);
+            if (centerY + 4 + Rects[k].height / 2 >= 0 && centerY + 4 + Rects[k].height / 2 < img_roi.rows)
+            {
+                seeds.at<uchar>(centerY + 4 + Rects[k].height / 2, centerX) = 255; // Under the center
+            }
 
-          //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
+            if (centerX - 4 - Rects[k].width / 2 >= 0 && centerX - 8 - Rects[k].width / 2 < img_roi.cols)
+            {
+                seeds.at<uchar>(centerY, centerX - 4 - Rects[k].width / 2) = 255; // Left of the center
+            }
+
+            if (centerX + 8 + Rects[k].width / 2 >= 0 && centerX + 8 + Rects[k].width / 2 < img_roi.cols)
+            {
+                seeds.at<uchar>(centerY, centerX + 4 + +Rects[k].width / 2) = 255; // Right of the center
+            }
+
+            //  ipa::imshow("seeds", seeds, true);
+
+            cv::Mat segmentedImage;
+
+            Utils::RegionGrowingHSV(img_roi, seeds, segmentedImage);
+
+            //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
             //                      cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7)));
 
+            int count = 0;
+            for (int i = 0; i < img_roi.rows; i++)
+            {
+                for (int j = 0; j < img_roi.cols; j++)
+                {
+                    if (segmentedImage.at<uchar>(i, j) == 255)
+                    {
+                        count++;
+                    }
+                }
+            }
+            //   std::cout << count<<"\n";
+            //   std::cout << img_roi.rows * img_roi.cols << "\n";
 
-          int count = 0;
-          for (int i = 0; i < img_roi.rows; i++) {
-              for (int j = 0; j < img_roi.cols; j++) {
-                  if (segmentedImage.at<uchar>(i, j) == 255) {
-                      count++;
-                  }
-              }
-          }
-          //   std::cout << count<<"\n";
-          //   std::cout << img_roi.rows * img_roi.cols << "\n";
+            //   ipa::imshow("seg", segmentedImage, true);
+            if (count > 0.04 * img_roi.rows * img_roi.cols)
+            {
+                candidate_roi.push_back(ROIs[k]);
+                candidate_rects.push_back(Rects[k]);
+                candidate_min_rects.push_back(MinRects[k]);
+            }
+        }
+    }
 
-          //   ipa::imshow("seg", segmentedImage, true);
-          if (count > 0.04 * img_roi.rows * img_roi.cols) {
-              candidate_roi.push_back(ROIs[k]);
-              candidate_rects.push_back(Rects[k]);
-              candidate_min_rects.push_back(MinRects[k]);
-          }
-      }
- 
+    static void PipeHoughCircles(cv::Mat &preProcessedImg){
+for (size_t k = 0; k < candidate_roi.size(); k++)
+        {
 
+            cv::Mat img_roi = preProcessedImg(candidate_roi[k]).clone();
 
-// //------------------------------------------------------------------------------
-// //======================= HOUGH CIRCLES =================================
-// //------------------------------------------------------------------------------
-      for (size_t k = 0; k < candidate_roi.size(); k++) {
+            //   ipa::imshow("a", img_roi, true);
+            cv::Mat roi_gray;
+            cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
+            std::vector<cv::Vec3f> circles;
+            cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
-          cv::Mat img_roi = img_eq(candidate_roi[k]).clone();
-          
-       //   ipa::imshow("a", img_roi, true);
-          cv::Mat roi_gray;
-          cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
-          std::vector<cv::Vec3f> circles;
-          cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
+            HoughCircles(roi_gray, circles, cv::HOUGH_GRADIENT, 2, 120, 100, 18, 20, 150);
 
-          HoughCircles(roi_gray, circles, cv::HOUGH_GRADIENT, 2, 120, 100, 18, 20, 150);
+            if (!circles.empty())
+            {
 
-          if (!circles.empty()) {
+                std::vector<cv::Rect> candidate;
 
-              std::vector<cv::Rect> candidate;
-              
-              // Draw the circles on the original image
-              for (size_t i = 0; i < circles.size(); i++) {
+                // Draw the circles on the original image
+                for (size_t i = 0; i < circles.size(); i++)
+                {
 
-                  cv::Point2f center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-                  int radius = cvRound(circles[i][2]);
+                    cv::Point2f center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+                    int radius = cvRound(circles[i][2]);
 
-                  center.x += candidate_roi[k].x; // Adjust for ROI offset
-                  center.y += candidate_roi[k].y; // Adjust for ROI offset
-                 if (Utils::circleContainsRotatedRect(center, radius, candidate_min_rects[k])) {
+                    center.x += candidate_roi[k].x; // Adjust for ROI offset
+                    center.y += candidate_roi[k].y; // Adjust for ROI offset
+                    if (Utils::circleContainsRotatedRect(center, radius, candidate_min_rects[k]))
+                    {
 
-                      center.x -= ROIs[k].x; // Adjust for ROI offset
-                      center.y -= ROIs[k].y; // Adjust for ROI offset
+                        center.x -= ROIs[k].x; // Adjust for ROI offset
+                        center.y -= ROIs[k].y; // Adjust for ROI offset
 
-                      circle(img_roi, center, radius, cv::Scalar(0, 255, 0), 4);
-                      circle(img_roi, center, 5, cv::Scalar(0, 128, 255), -1);
+                        circle(img_roi, center, radius, cv::Scalar(0, 255, 0), 4);
+                        circle(img_roi, center, 5, cv::Scalar(0, 128, 255), -1);
 
-                      cv::Rect boundingRect(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
-                      boundingRect.x += candidate_roi[k].x; // Adjust for ROI offset
-                      boundingRect.y += candidate_roi[k].y; // Adjust for ROI offset
-                      candidate.push_back(boundingRect);
-                      
-                      
-                   //   cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
-                      
-                     //   ipa::imshow("roi", img_roi, true);
-                  }
-              }
+                        cv::Rect boundingRect(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
+                        boundingRect.x += candidate_roi[k].x; // Adjust for ROI offset
+                        boundingRect.y += candidate_roi[k].y; // Adjust for ROI offset
+                        candidate.push_back(boundingRect);
 
-              
-              if(candidate.size()>0) {
+                        //   cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
 
-                  // Define the ROI
-                  int rect_width = 1.5 * candidate_rects[k].width;
-                  int rect_height = 1.5 * candidate_rects[k].width;
+                        //   ipa::imshow("roi", img_roi, true);
+                    }
+                }
 
-                  // Center of the rectangle
-                  cv::Point center(candidate_rects[k].x + candidate_rects[k].width / 2, candidate_rects[k].y + candidate_rects[k].height / 2);
+                if (candidate.size() > 0)
+                {
 
-                  // Adjust rect to ensure it remains within image bounds
-                  int rect_x = std::max(0, center.x - rect_width / 2);
-                  int rect_y = std::max(0, center.y - rect_height / 2);
-                  int rect_right = std::min(img_in.cols - 1, rect_x + rect_width);
-                  int rect_bottom = std::min(img_in.rows - 1, rect_y + rect_height);
+                    // Define the ROI
+                    int rect_width = 1.5 * candidate_rects[k].width;
+                    int rect_height = 1.5 * candidate_rects[k].width;
 
-                  // Create rect 
-                  cv::Rect bounding(rect_x, rect_y, rect_right - rect_x, rect_bottom - rect_y);
+                    // Center of the rectangle
+                    cv::Point center(candidate_rects[k].x + candidate_rects[k].width / 2, candidate_rects[k].y + candidate_rects[k].height / 2);
 
-                  candidateSignCotours.push_back(Utils::getRectContours(bounding));
-                  //cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
-                  cv::Mat roi = img_eq(bounding).clone();
-                  //ipa::imshow("roi", roi, true);
-                  
-                  
-                  std::vector<float> roiFeatures;
-                  Utils::features(roi, roiFeatures);
+                    // Adjust rect to ensure it remains within image bounds
+                    int rect_x = std::max(0, center.x - rect_width / 2);
+                    int rect_y = std::max(0, center.y - rect_height / 2);
+                    int rect_right = std::min(preProcessedImg.cols - 1, rect_x + rect_width);
+                    int rect_bottom = std::min(preProcessedImg.rows - 1, rect_y + rect_height);
 
-                 
+                    // Create rect
+                    cv::Rect bounding(rect_x, rect_y, rect_right - rect_x, rect_bottom - rect_y);
 
-                  for (int i = 0; i < realSignContours.size(); i++)
-                  {
+                    candidateSignCotours.push_back(Utils::getRectContours(bounding));
+                    // cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
+                    cv::Mat roi = preProcessedImg(bounding).clone();
+                    // ipa::imshow("roi", roi, true);
 
-                      float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
-                          bounding);
-                      
-                      if (intersection > 0.5)
-                      {
-                          trueFeatures.push_back(roiFeatures);
-                          Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)7.sco", trueFeatures.size(), bounding);
-                      }
-                      else {
-                          falseFeatures.push_back(roiFeatures);
-                          Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)7.sco", falseFeatures.size(), bounding);
-                      }
-                      
-                  }
-                 
+                    std::vector<float> roiFeatures;
+                    Utils::features(roi, roiFeatures);
 
-              }
-              
-              
-          }
-         
-      }
+                    for (int i = 0; i < realSignContours.size(); i++)
+                    {
 
-      ipa::imshow("img", img_copy, true);
-      //ipa::imshow("img", img_in, true);
+                        float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
+                                                                          bounding);
+
+                        if (intersection > 0.5)
+                        {
+                            trueFeatures.push_back(roiFeatures);
+                            // Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)7.sco", trueFeatures.size(), bounding);
+                        }
+                        else
+                        {
+                            falseFeatures.push_back(roiFeatures);
+                            // Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)7.sco", falseFeatures.size(), bounding);
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -260,7 +280,7 @@ struct CoreFunctions
 
             std::string path = std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".jpg";
             std::string path_json = (std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".json");
-            FILE* file = fopen(path_json.c_str(), "rb");
+            FILE *file = fopen(path_json.c_str(), "rb");
             // Definiamo un buffer di lettura
             char buffer[65536]; // 64KB
 
@@ -282,7 +302,7 @@ struct CoreFunctions
 
             cv::Mat img2draw = img.clone();
 
-            for (auto& obj : document["objects"].GetArray())
+            for (auto &obj : document["objects"].GetArray())
             {
                 if (strcmp(obj["label"].GetString(), noEntryLabelJson.c_str()) == 0)
                 {
@@ -306,22 +326,22 @@ struct CoreFunctions
                 ipa::imshow("Original image", img, true, 0.5f);
             }
 
-            CoreFunctions::Preprocessing(img, show);
+            CoreFunctions::Pipeline(img, show);
             float max_intersection = 0;
-            
+
             for (int i = 0; i < realSignContours.size(); i++)
             {
                 for (int j = 0; j < candidateSignCotours.size(); j++)
                 {
                     float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
-                        Utils::verticesToRect(candidateSignCotours[j]));
+                                                                      Utils::verticesToRect(candidateSignCotours[j]));
                     if (intersection > max_intersection)
                     {
                         max_intersection = intersection;
                     }
                 }
             }
-            
+
             if (max_intersection > 0.5)
             {
                 std::string msg = std::string("Sign" + std::to_string(k) + ": ok");
@@ -336,15 +356,13 @@ struct CoreFunctions
 
             cv::destroyAllWindows();
         }
-       // Utils::normalizeFeatures(falseFeatures);
-       // Utils::normalizeFeatures(trueFeatures);
+        // Utils::normalizeFeatures(falseFeatures);
+        // Utils::normalizeFeatures(trueFeatures);
         Utils::writeCsv(falseFeatures, "false_glcm_features9.csv");
         Utils::writeCsv(trueFeatures, "true_glcm_features9.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         int percentual = (ok / total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);
-
-        
     }
 };
