@@ -135,7 +135,7 @@ struct CoreFunctions
           }
       }
  
-
+      int c = 0;
 
 // //------------------------------------------------------------------------------
 // //======================= HOUGH CIRCLES =================================
@@ -184,6 +184,7 @@ struct CoreFunctions
                   }
               }
 
+            
               
               if(candidate.size()>0) {
 
@@ -205,15 +206,40 @@ struct CoreFunctions
 
                   candidateSignCotours.push_back(Utils::getRectContours(bounding));
                   //cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
-                  cv::Mat roi = img_eq(bounding).clone();
+                  cv::Mat roi = img_in(bounding).clone();
                   //ipa::imshow("roi", roi, true);
                   
                   
                   std::vector<float> roiFeatures;
                   Utils::features(roi, roiFeatures);
 
-                 
+                  // Track the best intersection for this ROI
+                  float bestIntersection = 0.0;
+                  int bestContourIndex = -1;
 
+                  for (int j = 0; j < realSignContours.size(); j++) {
+                      float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[j]),bounding);
+
+                      if (intersection > bestIntersection) {
+                          bestIntersection = intersection;
+                          bestContourIndex = j;
+                      }
+                  }
+
+                  // If the best intersection is above the threshold, it's a true positive
+                  if (bestIntersection > 0.5) {
+                      trueFeatures.push_back(roiFeatures);
+                      Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)15.sco", trueFeatures.size(), bounding, cv::Scalar(0, 255, 0));
+                      // Remove or mark the ground truth contour as matched
+                      realSignContours.erase(realSignContours.begin() + bestContourIndex);
+                  }
+                  else if(c<1) {
+                      falseFeatures.push_back(roiFeatures);
+                      Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)15.sco", falseFeatures.size(), bounding, cv::Scalar(0, 0, 255));
+                      c++;
+                  }
+
+                  /*
                   for (int i = 0; i < realSignContours.size(); i++)
                   {
 
@@ -223,15 +249,16 @@ struct CoreFunctions
                       if (intersection > 0.5)
                       {
                           trueFeatures.push_back(roiFeatures);
-                          Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)7.sco", trueFeatures.size(), bounding);
+                          Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)13.sco", trueFeatures.size(), bounding, cv::Scalar(0,255,0));
                       }
                       else {
                           falseFeatures.push_back(roiFeatures);
-                          Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)7.sco", falseFeatures.size(), bounding);
+                          Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)13.sco", falseFeatures.size(), bounding, cv::Scalar(0, 0, 255));
                       }
                       
                   }
-                 
+                  */
+              //    std::cout << bounding.width << "    " << bounding.height << "\n";
 
               }
               
@@ -240,8 +267,9 @@ struct CoreFunctions
          
       }
 
-      ipa::imshow("img", img_copy, true);
+     //ipa::imshow("img", img_copy, true);
       //ipa::imshow("img", img_in, true);
+      
     }
 
 
@@ -338,8 +366,8 @@ struct CoreFunctions
         }
        // Utils::normalizeFeatures(falseFeatures);
        // Utils::normalizeFeatures(trueFeatures);
-        Utils::writeCsv(falseFeatures, "false_glcm_features9.csv");
-        Utils::writeCsv(trueFeatures, "true_glcm_features9.csv");
+        Utils::writeCsv(falseFeatures, "false_glcm_features16.csv");
+        Utils::writeCsv(trueFeatures, "true_glcm_features16.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         int percentual = (ok / total_number);

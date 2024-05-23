@@ -524,52 +524,78 @@ struct Utils
     }
 
     static std::vector<float> HogDescriptors(const cv::Mat& img_in) {
-        
+
         cv::Mat resized;
         // Resize the image if needed
-          cv::resize(img_in, resized, cv::Size(64, 64));
+        //  cv::resize(img_in, resized, cv::Size(64, 64));
 
+        cv::resize(img_in, resized, cv::Size(80, 80));
 
-          cv::HOGDescriptor hog(
-              cv::Size(64, 64), // winSize
-              cv::Size(16, 16), // blockSize
-              cv::Size(8, 8),   // blockStride
-              cv::Size(8, 8),   // cellSize
-              9,                 // nbins
-              cv::NORM_L2
-          );
-
-          /*
-        // Set up HOG descriptor
         cv::HOGDescriptor hog(
-            cv::Size(128, 128), // winSize
-            cv::Size(16, 16),   // blockSize
-            cv::Size(8, 8),     // blockStride
-            cv::Size(8, 8),     // cellSize
-            9,                  // nbins
-            1,                  // derivAperture
-            -1,                 // winSigma
-            cv::HOGDescriptor::L2Hys, // histogramNormType
-            0.2,                // L2HysThresh
-            false,              // gammaCorrection
-            64,                 // nlevels
-            true                // signedGradient
+            cv::Size(80, 80), // winSize
+            cv::Size(16, 16), // blockSize
+            cv::Size(8, 8),   // blockStride
+            cv::Size(8, 8),   // cellSize
+            9                // nbins
         );
-       */
+
+        /*
+        cv::HOGDescriptor hog(
+            cv::Size(64, 64), // winSize
+            cv::Size(16, 16), // blockSize
+            cv::Size(8, 8),   // blockStride
+            cv::Size(8, 8),   // cellSize
+            9,                 // nbins
+            cv::NORM_L2
+        );
+        */
+        /*
+      // Set up HOG descriptor
+      cv::HOGDescriptor hog(
+          cv::Size(128, 128), // winSize
+          cv::Size(16, 16),   // blockSize
+          cv::Size(8, 8),     // blockStride
+          cv::Size(8, 8),     // cellSize
+          9,                  // nbins
+          1,                  // derivAperture
+          -1,                 // winSigma
+          cv::HOGDescriptor::L2Hys, // histogramNormType
+          0.2,                // L2HysThresh
+          false,              // gammaCorrection
+          64,                 // nlevels
+          true                // signedGradient
+      );
+     */
         std::vector<float> hogFeatures;
-        std::vector<cv::Point> locations;
-        hog.compute(resized, hogFeatures, cv::Size(8, 8), cv::Size(0, 0), locations);
+        hog.compute(resized, hogFeatures);
+        
+        // Find min and max values
+        auto minmax = std::minmax_element(hogFeatures.begin(), hogFeatures.end());
+        float minVal = *minmax.first;
+        float maxVal = *minmax.second;
 
-        // Normalize HOG descriptors
-       // cv::Mat hogDescriptorsMat(hogFeatures); // Convert to a matrix
-       // cv::Mat normalizedHogDescriptorsMat;
-       // cv::normalize(hogDescriptorsMat, normalizedHogDescriptorsMat, 1.0, 0, cv::NORM_L2);
+        // Normalize HOG descriptors to range [0, 1]
+        std::vector<float> normalizedHogFeatures(hogFeatures.size());
+        std::transform(hogFeatures.begin(), hogFeatures.end(), normalizedHogFeatures.begin(),
+            [minVal, maxVal](float val) { return (val - minVal) / (maxVal - minVal); });
 
-        // Convert the normalized HOG descriptors back to a vector
-       // std::vector<float> normalizedHogFeatures(normalizedHogDescriptorsMat.begin<float>(), normalizedHogDescriptorsMat.end<float>());
+         /*
+        // Compute mean of HOG features
+        float mean = std::accumulate(hogFeatures.begin(), hogFeatures.end(), 0.0f) / hogFeatures.size();
 
+        // Compute standard deviation of HOG features
+        std::vector<float> diff(hogFeatures.size());
+        std::transform(hogFeatures.begin(), hogFeatures.end(), diff.begin(), [mean](float x) { return x - mean; });
+        float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0f);
+        float stdev = std::sqrt(sq_sum / hogFeatures.size());
 
-        return hogFeatures;
+        // Normalize HOG descriptors by subtracting the mean and dividing by the standard deviation
+        std::vector<float> normalizedHogFeatures(hogFeatures.size());
+        std::transform(hogFeatures.begin(), hogFeatures.end(), normalizedHogFeatures.begin(),
+            [mean, stdev](float val) { return (stdev == 0) ? 0 : (val - mean) / stdev; });
+            */
+   
+        return normalizedHogFeatures;
     }
 
 
@@ -619,10 +645,10 @@ struct Utils
 
        
         // Define the target size for resizing
-        cv::Size targetSize(200, 200); // Width x Height
+      //  cv::Size targetSize(200, 200); // Width x Height
 
 
-        cv::GaussianBlur(img_in, img_in, cv::Size(5, 5), 0.5);
+       // cv::GaussianBlur(img_in, img_in, cv::Size(5, 5), 0.5);
 
        // ipa::imshow("resize", resizedImage, true);
 
@@ -652,8 +678,8 @@ struct Utils
             for (const cv::Mat& glcm : glcms) {
                 float correlation = computeGLCMCorrelation(glcm);
                 float contrast = computeGLCMContrast(glcm);
-                features.push_back(correlation);
-                features.push_back(contrast);
+                //features.push_back(correlation);
+                //features.push_back(contrast);
             }
            
         }    
@@ -664,10 +690,10 @@ struct Utils
         std::vector<float> hogFeatures = HogDescriptors(gray);
         // Compute LBP features
         
-        std::vector<float> lbpFeatures = computeLBP(gray);
+       // std::vector<float> lbpFeatures = computeLBP(gray);
 
         // Combine HOG and LBP features
-        //features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
+        features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
         //features.insert(features.end(), lbpFeatures.begin(), lbpFeatures.end());
    
     }
@@ -722,7 +748,7 @@ struct Utils
         }
     }
 
-    static void ShowMachineLearningResults(cv::Mat& img_in, const std::string filename, int index, cv::Rect rectangle)
+    static void ShowMachineLearningResults(cv::Mat& img_in, const std::string filename, int index, cv::Rect rectangle,cv::Scalar color )
     {
     
         std::ifstream file(filename);
@@ -741,9 +767,9 @@ struct Utils
             int sampleIndex;
             float score;
             ss >> sampleIndex >> score;
-            if (index== sampleIndex && score > 0.24) {
-                cv::rectangle(img_in, rectangle, cv::Scalar(255, 0, 0), 2);
-                cv::putText(img_in, std::to_string(score).substr(0, 6), cv::Point(rectangle.x+rectangle.width+10, rectangle.y + rectangle.height/2), cv::FONT_HERSHEY_SIMPLEX, 1.5, cv::Scalar(255, 0, 0), 3);
+            if (index== sampleIndex && score > 0.25) {
+                cv::rectangle(img_in, rectangle, color, 2);
+                cv::putText(img_in, std::to_string(score).substr(0, 6), cv::Point(rectangle.x+rectangle.width+10, rectangle.y + rectangle.height/2), cv::FONT_HERSHEY_SIMPLEX, 1.5, color, 3);
 
             }
         }
