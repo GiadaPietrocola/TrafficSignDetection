@@ -33,7 +33,7 @@ struct CoreFunctions
         Rects.clear();
         MinRects.clear();
 
-        PipeRoiCreation(img_copy, contours);
+        PipeRoiCreation(preProcessedImg, contours);
 
         // //------------------------------------------------------------------------------
         // //======================= REGION GROWING =================================
@@ -42,7 +42,7 @@ struct CoreFunctions
         candidate_rects.clear();
         candidate_min_rects.clear();
 
-        PipeRegionGrowing(img_copy);
+        PipeRegionGrowing(preProcessedImg);
 
         // //------------------------------------------------------------------------------
         // //======================= HOUGH CIRCLES =================================
