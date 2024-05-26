@@ -15,7 +15,12 @@ using namespace rapidjson;
 
 struct CoreFunctions
 {
-
+    /**
+     * @brief Main pipeline function for image processing.
+     *
+     * @param img_in Input image to be processed.
+     * @param show Boolean flag to display images at various stages.
+     */
     static void Pipeline(cv::Mat &img_in, bool show)
     {
         cv::Mat img_copy = img_in.clone();
@@ -52,7 +57,13 @@ struct CoreFunctions
         // ipa::imshow("img", img_copy, true);
         // ipa::imshow("img", img_in, true);
     }
-    
+
+    /**
+     * @brief Preprocess the input image.
+     *
+     * @param img_in Input image to be preprocessed.
+     * @return cv::Mat Preprocessed image.
+     */
     static cv::Mat Preprocessing(cv::Mat &img_in)
     {
         cv::Mat img_eq;
@@ -60,6 +71,13 @@ struct CoreFunctions
 
         return img_eq;
     }
+
+    /**
+     * @brief Create ROIs from contours.
+     *
+     * @param img_in Input image.
+     * @param contours Vector of contours detected in the image.
+     */
     static void PipeRoiCreation(cv::Mat &img_in, std::vector<std::vector<cv::Point>> contours)
     {
         for (const auto &contour : contours)
@@ -96,6 +114,11 @@ struct CoreFunctions
         }
     }
 
+    /**
+     * @brief Perform region growing on the preprocessed image.
+     *
+     * @param preProcessedImg Preprocessed input image.
+     */
     static void PipeRegionGrowing(cv::Mat &preProcessedImg)
     {
         for (size_t k = 0; k < ROIs.size(); k++)
@@ -104,7 +127,6 @@ struct CoreFunctions
             cv::Mat img_roi = preProcessedImg(ROIs[k]).clone();
             cv::Mat roi_gray;
             cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
-            std::vector<cv::Vec3f> circles;
             cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
             cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
@@ -115,24 +137,16 @@ struct CoreFunctions
 
             // Check if adding seeds won't exceed image boundaries
             if (centerY - 4 - Rects[k].height / 2 >= 0 && centerY - 4 - Rects[k].height / 2 < img_roi.rows)
-            {
                 seeds.at<uchar>(centerY - 4 - Rects[k].height / 2, centerX) = 255; // Over the center
-            }
 
             if (centerY + 4 + Rects[k].height / 2 >= 0 && centerY + 4 + Rects[k].height / 2 < img_roi.rows)
-            {
                 seeds.at<uchar>(centerY + 4 + Rects[k].height / 2, centerX) = 255; // Under the center
-            }
 
             if (centerX - 4 - Rects[k].width / 2 >= 0 && centerX - 8 - Rects[k].width / 2 < img_roi.cols)
-            {
                 seeds.at<uchar>(centerY, centerX - 4 - Rects[k].width / 2) = 255; // Left of the center
-            }
 
             if (centerX + 8 + Rects[k].width / 2 >= 0 && centerX + 8 + Rects[k].width / 2 < img_roi.cols)
-            {
                 seeds.at<uchar>(centerY, centerX + 4 + +Rects[k].width / 2) = 255; // Right of the center
-            }
 
             //  ipa::imshow("seeds", seeds, true);
 
@@ -140,18 +154,13 @@ struct CoreFunctions
 
             Utils::RegionGrowingHSV(img_roi, seeds, segmentedImage);
 
-            //   cv::morphologyEx(segmentedImage, segmentedImage, cv::MORPH_CLOSE,
-            //                      cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7)));
-
             int count = 0;
             for (int i = 0; i < img_roi.rows; i++)
             {
                 for (int j = 0; j < img_roi.cols; j++)
                 {
                     if (segmentedImage.at<uchar>(i, j) == 255)
-                    {
                         count++;
-                    }
                 }
             }
             //   std::cout << count<<"\n";
@@ -167,13 +176,17 @@ struct CoreFunctions
         }
     }
 
-    static void PipeHoughCircles(cv::Mat &preProcessedImg){
-for (size_t k = 0; k < candidate_roi.size(); k++)
+    /**
+     * @brief Detect circles using Hough Transform.
+     *
+     * @param preProcessedImg Preprocessed input image.
+     */
+    static void PipeHoughCircles(cv::Mat &preProcessedImg)
+    {
+        for (size_t k = 0; k < candidate_roi.size(); k++)
         {
 
             cv::Mat img_roi = preProcessedImg(candidate_roi[k]).clone();
-
-            //   ipa::imshow("a", img_roi, true);
             cv::Mat roi_gray;
             cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
             std::vector<cv::Vec3f> circles;
@@ -264,62 +277,32 @@ for (size_t k = 0; k < candidate_roi.size(); k++)
         }
     }
 
-
     /**
-     * @brief Function that handles all the Json stuff
+     * @brief Function that handles all the Json stuff.
      *
+     * @param show If true, shows the images with detected signs.
      */
     static void JsonHandler(bool show)
     {
+        const int total_number = 96;
         int ok = 0;
-        int total_number = 96;
+
         for (int k = 1; k <= total_number; k++)
         {
             realSignContours.clear();
             candidateSignCotours.clear();
 
             std::string path = std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".jpg";
-            std::string path_json = (std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".json");
-            FILE *file = fopen(path_json.c_str(), "rb");
-            // Definiamo un buffer di lettura
-            char buffer[65536]; // 64KB
+            std::string path_json = std::string(IMAGES_PATH) + "/Sign" + std::to_string(k) + ".json";
 
-            // Creiamo uno stream di lettura dal file
-            FileReadStream inputStream(file, buffer, sizeof(buffer));
-            // printf("%s\n", path_json.c_str());
-
-            // Definiamo un documento JSON
             Document document;
+            if (!LoadJsonDocument(path_json, document))
+                continue;
 
-            // Parsiamo il documento JSON dall'input stream
-            document.ParseStream(inputStream);
-
-            // Chiudiamo il file
-            fclose(file);
-            // Estraiamo il campo desiderato (es. "campo")
-            // Estraiamo i dati dal documento JSON
             cv::Mat img = cv::imread(path);
-
             cv::Mat img2draw = img.clone();
 
-            for (auto &obj : document["objects"].GetArray())
-            {
-                if (strcmp(obj["label"].GetString(), noEntryLabelJson.c_str()) == 0)
-                {
-                    // printf("%s\n", obj["label"].GetString());
-
-                    std::vector<cv::Point> bbox;
-                    rapidjson::Value bboxvalue = obj["bbox"].GetArray();
-                    bbox.push_back(cv::Point(bboxvalue["xmin"].GetFloat(), bboxvalue["ymin"].GetFloat()));
-                    bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymin"].GetFloat()));
-                    bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymax"].GetFloat()));
-                    bbox.push_back(cv::Point(bboxvalue["xmin"].GetFloat(), bboxvalue["ymax"].GetFloat()));
-                    realSignContours.push_back(bbox);
-
-                    cv::drawContours(img2draw, realSignContours, -1, cv::Scalar(0, 255, 0), 2);
-                }
-            }
-
+            ExtractRealSignContours(document, img2draw);
             if (show)
             {
                 ipa::imshow("Real Sign", img2draw, true, 0.5f);
@@ -327,42 +310,108 @@ for (size_t k = 0; k < candidate_roi.size(); k++)
             }
 
             CoreFunctions::Pipeline(img, show);
-            float max_intersection = 0;
+            float max_intersection = CalculateMaxIntersection();
 
-            for (int i = 0; i < realSignContours.size(); i++)
-            {
-                for (int j = 0; j < candidateSignCotours.size(); j++)
-                {
-                    float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
-                                                                      Utils::verticesToRect(candidateSignCotours[j]));
-                    if (intersection > max_intersection)
-                    {
-                        max_intersection = intersection;
-                    }
-                }
-            }
-
-            if (max_intersection > 0.5)
-            {
-                std::string msg = std::string("Sign" + std::to_string(k) + ": ok");
-                printf("%s\n", msg.c_str());
-                ok++;
-            }
-            else
-            {
-                std::string msg = std::string("Sign" + std::to_string(k) + ": no");
-                printf("%s\n", msg.c_str());
-            }
-
+            LogDetectionResult(k, max_intersection, ok);
             cv::destroyAllWindows();
         }
-        // Utils::normalizeFeatures(falseFeatures);
-        // Utils::normalizeFeatures(trueFeatures);
+
         Utils::writeCsv(falseFeatures, "false_glcm_features9.csv");
         Utils::writeCsv(trueFeatures, "true_glcm_features9.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
-        int percentual = (ok / total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);
+    }
+
+    /**
+     * @brief Loads a JSON document from the specified file path.
+     *
+     * @param path_json The path to the JSON file.
+     * @param document The JSON document to load into.
+     * @return True if the JSON document was successfully loaded, false otherwise.
+     */
+    static bool LoadJsonDocument(const std::string &path_json, Document &document)
+    {
+        FILE *file = fopen(path_json.c_str(), "rb");
+        if (!file)
+        {
+            printf("Error opening file: %s\n", path_json.c_str());
+            return false;
+        }
+
+        char buffer[65536];
+        FileReadStream inputStream(file, buffer, sizeof(buffer));
+        document.ParseStream(inputStream);
+        fclose(file);
+
+        if (document.HasParseError())
+        {
+            printf("Error parsing JSON: %s\n", path_json.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @brief Extracts the real sign contours from the JSON document and draws them on the image.
+     *
+     * @param document The JSON document containing the sign information.
+     * @param img2draw The image on which to draw the contours.
+     */
+    static void ExtractRealSignContours(Document &document, cv::Mat &img2draw)
+    {
+        for (auto &obj : document["objects"].GetArray())
+        {
+            if (strcmp(obj["label"].GetString(), noEntryLabelJson.c_str()) == 0)
+            {
+                std::vector<cv::Point> bbox;
+                rapidjson::Value bboxvalue = obj["bbox"].GetArray();
+                bbox.push_back(cv::Point(bboxvalue["xmin"].GetFloat(), bboxvalue["ymin"].GetFloat()));
+                bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymin"].GetFloat()));
+                bbox.push_back(cv::Point(bboxvalue["xmax"].GetFloat(), bboxvalue["ymax"].GetFloat()));
+                bbox.push_back(cv::Point(bboxvalue["xmin"].GetFloat(), bboxvalue["ymax"].GetFloat()));
+                realSignContours.push_back(bbox);
+
+                cv::drawContours(img2draw, realSignContours, -1, cv::Scalar(0, 255, 0), 2);
+            }
+        }
+    }
+
+    /**
+     * @brief Calculates the maximum intersection-over-union (IoU) between real sign contours and candidate sign contours.
+     *
+     * @return The maximum IoU value.
+     */
+    static float CalculateMaxIntersection()
+    {
+        float max_intersection = 0;
+        for (const auto &realSignContour : realSignContours)
+        {
+            for (const auto &candidateSignContour : candidateSignCotours)
+            {
+                float intersection = Utils::IntersectionOverUnion(
+                    Utils::verticesToRect(realSignContour),
+                    Utils::verticesToRect(candidateSignContour));
+                if (intersection > max_intersection)
+                    max_intersection = intersection;
+            }
+        }
+        return max_intersection;
+    }
+
+    /**
+     * @brief Logs the detection result for a given sign.
+     *
+     * @param k The sign index.
+     * @param max_intersection The maximum intersection-over-union (IoU) value.
+     * @param ok The count of correctly detected signs.
+     */
+    static void LogDetectionResult(int k, float max_intersection, int &ok)
+    {
+        std::string msg = "Sign" + std::to_string(k) + (max_intersection > 0.5 ? ": ok" : ": no");
+        printf("%s\n", msg.c_str());
+
+        if (max_intersection > 0.5)
+            ok++;
     }
 };
