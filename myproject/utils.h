@@ -10,7 +10,7 @@
 
 // for vscode work
 #ifndef IMAGES_PATH
-#define IMAGES_PATH "briaDataSet"
+#define IMAGES_PATH "CassinoDataSet"
 #endif
 
 enum DET_LABEL

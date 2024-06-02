@@ -58,7 +58,7 @@ endif()
 
 
 # define folder where example images are stored
-add_definitions(-DIMAGES_PATH="${ipa_SOURCE_DIR}/briaDataSet")
+add_definitions(-DIMAGES_PATH="${ipa_SOURCE_DIR}/CassinoDataSet")
 
 
 # build modules

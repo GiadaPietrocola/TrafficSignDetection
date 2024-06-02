@@ -183,6 +183,9 @@ struct CoreFunctions
      */
     static void PipeHoughCircles(cv::Mat &preProcessedImg)
     {
+        cv::Mat tmp = preProcessedImg.clone();
+        cv::cvtColor(tmp, tmp, cv::COLOR_BGR2GRAY);
+
         for (size_t k = 0; k < candidate_roi.size(); k++)
         {
 
@@ -248,7 +251,8 @@ struct CoreFunctions
                     cv::Rect bounding(rect_x, rect_y, rect_right - rect_x, rect_bottom - rect_y);
 
                     candidateSignCotours.push_back(Utils::getRectContours(bounding));
-                    // cv::rectangle(img_in, bounding, cv::Scalar(255, 0, 0), 2);
+                    
+                    cv::rectangle(tmp, bounding, cv::Scalar(255, 0, 0), 2);
                     cv::Mat roi = preProcessedImg(bounding).clone();
                     // ipa::imshow("roi", roi, true);
 
@@ -275,6 +279,7 @@ struct CoreFunctions
                 }
             }
         }
+        ipa::imshow("Hope", tmp, true);
     }
 
     /**
@@ -284,7 +289,7 @@ struct CoreFunctions
      */
     static void JsonHandler(bool show)
     {
-        const int total_number = 96;
+        const int total_number = 30;
         int ok = 0;
 
         for (int k = 1; k <= total_number; k++)
