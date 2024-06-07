@@ -17,7 +17,7 @@ int main()
 
 	//CoreFunctions::Pipeline(img);
 
-	CoreFunctions::JsonHandler(true);
+	CoreFunctions::JsonHandler(false);
 
 
 	return EXIT_SUCCESS;

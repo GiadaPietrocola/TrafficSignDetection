@@ -14,10 +14,10 @@
           "highway": false
         }, 
         "bbox": {
-          "xmin": 2188, 
-          "ymin": 548, 
-          "ymax": 1264, 
-          "xmax": 2788
+          "xmin": 2131, 
+          "ymin": 1584, 
+          "ymax": 1748, 
+          "xmax": 2290
         },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"

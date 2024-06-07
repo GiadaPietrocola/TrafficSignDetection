@@ -279,7 +279,7 @@ struct CoreFunctions
                 }
             }
         }
-        ipa::imshow("Hope", tmp, true);
+       // ipa::imshow("Hope", tmp, true);
     }
 
     /**
