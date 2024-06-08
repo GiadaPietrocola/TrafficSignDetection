@@ -1,0 +1,30 @@
+{
+    "width": 1152, 
+    "objects": [
+      {
+        "properties": {
+          "ambiguous": false, 
+          "dummy": false, 
+          "direction-or-information": false, 
+          "barrier": false, 
+          "occluded": false, 
+          "out-of-frame": false, 
+          "exterior": false, 
+          "included": false, 
+          "highway": false
+        }, 
+        "bbox": {
+          "xmin": 1902, 
+          "ymin": 583, 
+          "ymax": 1087, 
+          "xmax": 2408
+        },
+        "key": "outxmmvxl62o7enabgrygh", 
+        "label": "regulatory--no-entry--g1"
+      }
+ 
+
+    ], 
+    "ispano": false, 
+    "height": 2048
+  }
