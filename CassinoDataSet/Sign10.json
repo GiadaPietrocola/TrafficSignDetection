@@ -1,5 +1,5 @@
 {
-    "width": 1600, 
+    "width": 1152, 
     "objects": [
       {
         "properties": {
@@ -14,10 +14,10 @@
           "highway": false
         }, 
         "bbox": {
-          "xmin": 2301, 
-          "ymin": 1393, 
-          "ymax": 1521, 
-          "xmax": 2414
+          "xmin": 544, 
+          "ymin": 801, 
+          "ymax": 926, 
+          "xmax": 645
         },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"
@@ -26,5 +26,5 @@
 
     ], 
     "ispano": false, 
-    "height": 900
+    "height": 2048
   }

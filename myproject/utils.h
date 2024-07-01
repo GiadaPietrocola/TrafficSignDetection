@@ -548,7 +548,8 @@ struct Utils
         // Resize the image if needed
         cv::resize(img_in, resized, cv::Size(64, 64));
 
-        cv::HOGDescriptor hog(
+        /*
+       cv::HOGDescriptor hog(
             cv::Size(64, 64), // winSize
             cv::Size(16, 16), // blockSize
             cv::Size(8, 8),   // blockStride

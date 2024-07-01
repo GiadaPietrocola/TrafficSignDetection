@@ -52,7 +52,7 @@ struct CoreFunctions
         // //------------------------------------------------------------------------------
         // //======================= HOUGH CIRCLES =================================
         // //------------------------------------------------------------------------------
-        PipeHoughCircles(preProcessedImg);
+        PipeHoughCircles(preProcessedImg,img_in);
 
         // ipa::imshow("img", img_copy, true);
         // ipa::imshow("img", img_in, true);
@@ -181,10 +181,12 @@ struct CoreFunctions
      *
      * @param preProcessedImg Preprocessed input image.
      */
-    static void PipeHoughCircles(cv::Mat &preProcessedImg)
+    static void PipeHoughCircles(cv::Mat &preProcessedImg, cv::Mat img_in)
     {
         cv::Mat tmp = preProcessedImg.clone();
         cv::cvtColor(tmp, tmp, cv::COLOR_BGR2GRAY);
+
+        int c = 0;
 
         for (size_t k = 0; k < candidate_roi.size(); k++)
         {
@@ -258,25 +260,37 @@ struct CoreFunctions
 
                     std::vector<float> roiFeatures;
                     Utils::features(roi, roiFeatures);
+                    // Track the best intersection for this ROI
+                    float bestIntersection = 0.0;
+                    int bestContourIndex = -1;
 
-                    for (int i = 0; i < realSignContours.size(); i++)
-                    {
+                    cv::Mat img_copy = img_in.clone();
 
-                        float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[i]),
-                                                                          bounding);
+                    for (int j = 0; j < realSignContours.size(); j++) {
+                        float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[j]), bounding);
 
-                        if (intersection > 0.5)
-                        {
-                            trueFeatures.push_back(roiFeatures);
-                            // Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)7.sco", trueFeatures.size(), bounding);
-                        }
-                        else
-                        {
-                            falseFeatures.push_back(roiFeatures);
-                            // Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)7.sco", falseFeatures.size(), bounding);
+                        if (intersection > bestIntersection) {
+                            bestIntersection = intersection;
+                            bestContourIndex = j;
                         }
                     }
+
+                    // If the best intersection is above the threshold, it's a true positive
+                    if (bestIntersection > 0.5) {
+                        trueFeatures.push_back(roiFeatures);
+                        Utils::ShowMachineLearningResults(img_copy, "10-fold-pos.SEL(001)15.sco", trueFeatures.size(), bounding, cv::Scalar(0, 255, 0));
+                        // Remove or mark the ground truth contour as matched
+                        realSignContours.erase(realSignContours.begin() + bestContourIndex);
+                    }
+                    else if (c < 1) {
+                        falseFeatures.push_back(roiFeatures);
+                        Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)15.sco", falseFeatures.size(), bounding, cv::Scalar(0, 0, 255));
+                        c++;
+                    }
+
                 }
+
+                
             }
         }
        // ipa::imshow("Hope", tmp, true);
@@ -289,10 +303,10 @@ struct CoreFunctions
      */
     static void JsonHandler(bool show)
     {
-        const int total_number = 30;
+        const int total_number = 96;
         int ok = 0;
 
-        for (int k = 1; k <= total_number; k++)
+        for (int k = 51; k <= total_number; k++)
         {
             realSignContours.clear();
             candidateSignCotours.clear();
@@ -321,8 +335,8 @@ struct CoreFunctions
             cv::destroyAllWindows();
         }
 
-        Utils::writeCsv(falseFeatures, "false_glcm_features9.csv");
-        Utils::writeCsv(trueFeatures, "true_glcm_features9.csv");
+        Utils::writeCsv(falseFeatures, "false_glcm_features_test.csv");
+        Utils::writeCsv(trueFeatures, "true_glcm_features_test.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);

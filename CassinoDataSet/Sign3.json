@@ -14,11 +14,11 @@
           "highway": false
         }, 
         "bbox": {
-          "xmin": 846, 
-          "ymin": 1521, 
-          "ymax": 1655, 
-          "xmax": 978
-        }, 
+          "xmin": 868, 
+          "ymin": 1410, 
+          "ymax": 1575, 
+          "xmax": 1045
+        },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"
       },
@@ -35,14 +35,15 @@
           "highway": false
         }, 
         "bbox": {
-          "xmin": 3022, 
-          "ymin": 1444, 
-          "ymax": 1596, 
-          "xmax": 3184
+          "xmin": 2470, 
+          "ymin": 1524, 
+          "ymax": 1671, 
+          "xmax": 2620
         },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"
       }
+
     ], 
     "ispano": false, 
     "height": 960

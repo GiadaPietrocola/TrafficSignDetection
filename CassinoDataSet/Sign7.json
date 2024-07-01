@@ -10,14 +10,14 @@
           "occluded": false, 
           "out-of-frame": false, 
           "exterior": false, 
-          "included": false,
+          "included": false, 
           "highway": false
         }, 
         "bbox": {
-          "xmin": 1767, 
-          "ymin": 1550, 
-          "ymax": 1696, 
-          "xmax": 1921
+          "xmin": 2268, 
+          "ymin": 1501, 
+          "ymax": 1711, 
+          "xmax": 2477
         },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"

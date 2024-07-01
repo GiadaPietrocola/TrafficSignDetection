@@ -14,11 +14,32 @@
           "highway": false
         }, 
         "bbox": {
-          "xmin": 1772, 
-          "ymin": 1534, 
-          "ymax": 1834, 
-          "xmax": 2066
+          "xmin": 846, 
+          "ymin": 1521, 
+          "ymax": 1655, 
+          "xmax": 978
         }, 
+        "key": "outxmmvxl62o7enabgrygh", 
+        "label": "regulatory--no-entry--g1"
+      },
+      {
+        "properties": {
+          "ambiguous": false, 
+          "dummy": false, 
+          "direction-or-information": false, 
+          "barrier": false, 
+          "occluded": false, 
+          "out-of-frame": false, 
+          "exterior": false, 
+          "included": false, 
+          "highway": false
+        }, 
+        "bbox": {
+          "xmin": 3022, 
+          "ymin": 1444, 
+          "ymax": 1596, 
+          "xmax": 3184
+        },
         "key": "outxmmvxl62o7enabgrygh", 
         "label": "regulatory--no-entry--g1"
       }
