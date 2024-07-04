@@ -68,7 +68,7 @@ struct CoreFunctions
     {
         cv::Mat img_eq;
         Utils::HistogramLabeq(img_in, img_eq);
-
+        
         return img_eq;
     }
 
@@ -86,6 +86,7 @@ struct CoreFunctions
             // Get the bounding rectangle enclosing the contour
             cv::Rect bounding_rect = cv::boundingRect(contour);
             cv::RotatedRect min_bounding_rect = cv::minAreaRect(contour);
+
 
             // Calculate the width and height of the bounding rectangle
             int width = bounding_rect.width;
@@ -129,6 +130,8 @@ struct CoreFunctions
             cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
             cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
+        
+
             cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
 
             // Assuming Rects[k] represents your rectangle
@@ -150,6 +153,7 @@ struct CoreFunctions
 
             //  ipa::imshow("seeds", seeds, true);
 
+
             cv::Mat segmentedImage;
 
             Utils::RegionGrowingHSV(img_roi, seeds, segmentedImage);
@@ -167,6 +171,7 @@ struct CoreFunctions
             //   std::cout << img_roi.rows * img_roi.cols << "\n";
 
             //   ipa::imshow("seg", segmentedImage, true);
+
             if (count > 0.04 * img_roi.rows * img_roi.cols)
             {
                 candidate_roi.push_back(ROIs[k]);
@@ -230,6 +235,8 @@ struct CoreFunctions
                         //   cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
 
                         //   ipa::imshow("roi", img_roi, true);
+
+                        
                     }
                 }
 
@@ -257,6 +264,8 @@ struct CoreFunctions
                     cv::rectangle(tmp, bounding, cv::Scalar(255, 0, 0), 2);
                     cv::Mat roi = preProcessedImg(bounding).clone();
                     // ipa::imshow("roi", roi, true);
+
+                    cv::imwrite(std::string(IMAGES_PATH) + "/final_roi.jpg", roi);
 
                     std::vector<float> roiFeatures;
                     Utils::features(roi, roiFeatures);
@@ -303,10 +312,10 @@ struct CoreFunctions
      */
     static void JsonHandler(bool show)
     {
-        const int total_number = 96;
+        const int total_number = 55;
         int ok = 0;
 
-        for (int k = 51; k <= total_number; k++)
+        for (int k = 55; k <= total_number; k++)
         {
             realSignContours.clear();
             candidateSignCotours.clear();
@@ -335,8 +344,8 @@ struct CoreFunctions
             cv::destroyAllWindows();
         }
 
-        Utils::writeCsv(falseFeatures, "false_glcm_features_test.csv");
-        Utils::writeCsv(trueFeatures, "true_glcm_features_test.csv");
+      //  Utils::writeCsv(falseFeatures, "false_glcm_features_test.csv");
+      //  Utils::writeCsv(trueFeatures, "true_glcm_features_test.csv");
 
         printf("Number of ok: %d on %d\n", ok, total_number);
         printf("Percentual %f", ((float)ok / total_number) * 100);

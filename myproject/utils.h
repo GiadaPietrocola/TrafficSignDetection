@@ -70,15 +70,18 @@ struct Utils
         // denoising
         cv::GaussianBlur(gray, gray, cv::Size(5, 5), 0, 0.6);
 
+
         // rectangles enhancement with grayscale morphological tophat
         cv::Mat tophat;
         cv::morphologyEx(gray, tophat, cv::MORPH_TOPHAT,
                          cv::getStructuringElement(cv::MORPH_RECT, cv::Size(11, 61)));
 
+       
         cv::Mat edges;
 
         // binarization
         Utils::AdaptiveThresh(tophat, edges, 71, -1);
+
 
         // morpological opening
         cv::morphologyEx(edges, edges, cv::MORPH_OPEN,
@@ -241,7 +244,7 @@ struct Utils
         //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
         //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
-        cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", edges);
+    
     }
 
     /**
@@ -316,7 +319,7 @@ struct Utils
 
         //    ipa::imshow("huebin", hueBinary, true, 0.5f);
 
-        cv::imwrite(std::string(IMAGES_PATH) + "/hue.jpg", hueBinary);
+ 
 
         cv::Mat binarySaturation;
 
@@ -328,6 +331,9 @@ struct Utils
 
         AdaptiveThresh(hlsChannels[1], binarySaturation, 71, 2);
         //  ipa::imshow("prova", binarySaturation, true, 0.5f);
+
+ 
+
         cv::Mat seeds_prev;
         cv::Mat predicate = binarySaturation & hueBinary;
         int i = 0;
@@ -347,7 +353,7 @@ struct Utils
 
         segmentedImage = seeds;
 
-        cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
+      //  cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
     }
 
     /**
@@ -420,126 +426,6 @@ struct Utils
         return tmp;
     }
 
-    static cv::Mat computeGLCM(const cv::Mat &img, int distance, int angle)
-    {
-        if (img.channels() != 1)
-            throw "Only single-channel images are supported";
-        if (img.depth() != CV_8U)
-            throw "Only 8-bits images are supported";
-
-        int numLevels = 256;
-        int rows = img.rows;
-        int cols = img.cols;
-
-        cv::Mat glcm = cv::Mat::zeros(numLevels, numLevels, CV_32FC1);
-
-        int dr = ucas::round(distance * std::sin(angle * CV_PI / 180));
-        int dc = ucas::round(distance * std::cos(angle * CV_PI / 180));
-
-        int count = 0;
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                int r2 = i + dr;
-                int c2 = j + dc;
-
-                if (r2 >= 0 && r2 < rows && c2 >= 0 && c2 < cols)
-                {
-                    glcm.at<float>(img.at<uchar>(i, j), img.at<uchar>(r2, c2))++;
-                    count++;
-                }
-            }
-        }
-
-        glcm /= count;
-
-        return glcm;
-    }
-
-    static float computeGLCMCorrelation(const cv::Mat &glcm)
-    {
-        int numLevels = glcm.rows;
-
-        float mr = 0, mc = 0;
-        float sr = 0, sc = 0;
-
-        for (int i = 0; i < numLevels; i++)
-            for (int j = 0; j < numLevels; j++)
-            {
-                mr += i * glcm.at<float>(i, j);
-                mc += j * glcm.at<float>(i, j);
-            }
-
-        for (int i = 0; i < numLevels; i++)
-            for (int j = 0; j < numLevels; j++)
-            {
-                sr += (i - mr) * (i - mr) * glcm.at<float>(i, j);
-                sc += (j - mc) * (j - mc) * glcm.at<float>(i, j);
-            }
-        sr = std::sqrt(sr);
-        sc = std::sqrt(sc);
-
-        float correlation = 0.0;
-        for (int i = 0; i < numLevels; ++i)
-        {
-            for (int j = 0; j < numLevels; ++j)
-            {
-                float p = glcm.at<float>(i, j);
-                correlation += ((i - mr) * (j - mc) * p) / (sr * sc);
-            }
-        }
-
-        return correlation;
-    }
-
-    static float computeGLCMEnergy(const cv::Mat &glcm)
-    {
-        int numLevels = glcm.rows;
-        float energy = 0.0;
-
-        for (int i = 0; i < numLevels; ++i)
-        {
-            for (int j = 0; j < numLevels; ++j)
-            {
-                float p = glcm.at<float>(i, j);
-                energy += p * p;
-            }
-        }
-
-        return energy;
-    }
-
-    static float computeGLCMContrast(const cv::Mat &glcm)
-    {
-        float contrast = 0;
-
-        int numLevels = glcm.rows;
-
-        for (int i = 0; i < numLevels; i++)
-            for (int j = 0; j < numLevels; j++)
-                contrast += (i - j) * (i - j) * glcm.at<float>(i, j);
-
-        return contrast;
-    }
-
-    static float computeGLCMHomogeneity(const cv::Mat &glcm)
-    {
-        int numLevels = glcm.rows;
-        float homogeneity = 0.0;
-
-        for (int i = 0; i < numLevels; ++i)
-        {
-            for (int j = 0; j < numLevels; ++j)
-            {
-                float p = glcm.at<float>(i, j);
-                homogeneity += p / (1.0 + std::abs(i - j));
-            }
-        }
-
-        return homogeneity;
-    }
-
 
 
     static std::vector<float> HogDescriptors(const cv::Mat& img_in) {
@@ -548,33 +434,6 @@ struct Utils
         // Resize the image if needed
         cv::resize(img_in, resized, cv::Size(64, 64));
 
-        /*
-       cv::HOGDescriptor hog(
-            cv::Size(64, 64), // winSize
-            cv::Size(16, 16), // blockSize
-            cv::Size(8, 8),   // blockStride
-            cv::Size(8, 8),   // cellSize
-            9,                // nbins
-            cv::NORM_L2);
-
-        /*
-      // Set up HOG descriptor
-      cv::HOGDescriptor hog(
-          cv::Size(128, 128), // winSize
-          cv::Size(16, 16),   // blockSize
-          cv::Size(8, 8),     // blockStride
-          cv::Size(8, 8),     // cellSize
-          9,                  // nbins
-          1,                  // derivAperture
-          -1,                 // winSigma
-          cv::HOGDescriptor::L2Hys, // histogramNormType
-          0.2,                // L2HysThresh
-          false,              // gammaCorrection
-          64,                 // nlevels
-          true                // signedGradient
-      );
-     */
-        //  cv::resize(img_in, resized, cv::Size(64, 64));
 
         cv::resize(img_in, resized, cv::Size(80, 80));
 
@@ -586,33 +445,6 @@ struct Utils
             9                // nbins
         );
 
-        /*
-        cv::HOGDescriptor hog(
-            cv::Size(64, 64), // winSize
-            cv::Size(16, 16), // blockSize
-            cv::Size(8, 8),   // blockStride
-            cv::Size(8, 8),   // cellSize
-            9,                 // nbins
-            cv::NORM_L2
-        );
-        */
-        /*
-      // Set up HOG descriptor
-      cv::HOGDescriptor hog(
-          cv::Size(128, 128), // winSize
-          cv::Size(16, 16),   // blockSize
-          cv::Size(8, 8),     // blockStride
-          cv::Size(8, 8),     // cellSize
-          9,                  // nbins
-          1,                  // derivAperture
-          -1,                 // winSigma
-          cv::HOGDescriptor::L2Hys, // histogramNormType
-          0.2,                // L2HysThresh
-          false,              // gammaCorrection
-          64,                 // nlevels
-          true                // signedGradient
-      );
-     */
         std::vector<float> hogFeatures;
         hog.compute(resized, hogFeatures);
         
@@ -626,128 +458,19 @@ struct Utils
         std::transform(hogFeatures.begin(), hogFeatures.end(), normalizedHogFeatures.begin(),
             [minVal, maxVal](float val) { return (val - minVal) / (maxVal - minVal); });
 
-         /*
-        // Compute mean of HOG features
-        float mean = std::accumulate(hogFeatures.begin(), hogFeatures.end(), 0.0f) / hogFeatures.size();
-
-        // Compute standard deviation of HOG features
-        std::vector<float> diff(hogFeatures.size());
-        std::transform(hogFeatures.begin(), hogFeatures.end(), diff.begin(), [mean](float x) { return x - mean; });
-        float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0f);
-        float stdev = std::sqrt(sq_sum / hogFeatures.size());
-
-        // Normalize HOG descriptors by subtracting the mean and dividing by the standard deviation
-        std::vector<float> normalizedHogFeatures(hogFeatures.size());
-        std::transform(hogFeatures.begin(), hogFeatures.end(), normalizedHogFeatures.begin(),
-            [mean, stdev](float val) { return (stdev == 0) ? 0 : (val - mean) / stdev; });
-            */
-   
         return normalizedHogFeatures;
-    }
-
-    // Function to compute LBP features
-    static std::vector<float> computeLBP(const cv::Mat &src)
-    {
-        cv::Mat lbpImage;
-        lbpImage.create(src.size(), CV_8UC1);
-
-        // LBP calculation
-        for (int y = 1; y < src.rows - 1; y++)
-        {
-            for (int x = 1; x < src.cols - 1; x++)
-            {
-                uchar center = src.at<uchar>(y, x);
-                uchar code = 0;
-                code |= (src.at<uchar>(y - 1, x - 1) > center) << 7;
-                code |= (src.at<uchar>(y - 1, x) > center) << 6;
-                code |= (src.at<uchar>(y - 1, x + 1) > center) << 5;
-                code |= (src.at<uchar>(y, x + 1) > center) << 4;
-                code |= (src.at<uchar>(y + 1, x + 1) > center) << 3;
-                code |= (src.at<uchar>(y + 1, x) > center) << 2;
-                code |= (src.at<uchar>(y + 1, x - 1) > center) << 1;
-                code |= (src.at<uchar>(y, x - 1) > center) << 0;
-                lbpImage.at<uchar>(y, x) = code;
-            }
-        }
-
-        // Calculate histogram
-        std::vector<float> hist(256, 0);
-        for (int y = 0; y < lbpImage.rows; y++)
-        {
-            for (int x = 0; x < lbpImage.cols; x++)
-            {
-                hist[lbpImage.at<uchar>(y, x)]++;
-            }
-        }
-
-        int max = 0;
-        for (int i = 0; i < hist.size(); i++)
-        {
-            if (hist[i] > max)
-                max = hist[i];
-        }
-        for (int i = 0; i < hist.size(); i++)
-        {
-            hist[i] /= max;
-        }
-        return hist;
     }
 
     static void features(const cv::Mat &img_in, std::vector<float> &features)
     {
 
-        // Define the target size for resizing
-      //  cv::Size targetSize(200, 200); // Width x Height
-
-
-       // cv::GaussianBlur(img_in, img_in, cv::Size(5, 5), 0.5);
-
-        // ipa::imshow("resize", resizedImage, true);
-
-        cv::Mat hsvImage;
-        cv::cvtColor(img_in, hsvImage, cv::COLOR_BGR2HSV);
-
-        // Split the IHLS image into individual channels
-        std::vector<cv::Mat> hsvChannels;
-        cv::split(hsvImage, hsvChannels);
-
-        // Parameters for GLCM computation
-        int distance = 1;                           // Distance parameter for GLCM
-        std::vector<int> angles = {0, 45, 90, 135}; // Angles for GLCM computation
-
-        // Compute GLCM features
-
-        for (int i = 0; i < 3; i++)
-        {
-
-            // Compute GLCM for each angle
-            std::vector<cv::Mat> glcms;
-
-            for (int angle : angles)
-            {
-                glcms.push_back(computeGLCM(hsvChannels[i], distance, angle));
-            }
-
-            for (const cv::Mat &glcm : glcms)
-            {
-                float correlation = computeGLCMCorrelation(glcm);
-                float contrast = computeGLCMContrast(glcm);
-                //features.push_back(correlation);
-                //features.push_back(contrast);
-            }
-        }
         cv::Mat gray;
 
         cv::cvtColor(img_in, gray, cv::COLOR_RGB2GRAY);
 
         std::vector<float> hogFeatures = HogDescriptors(gray);
-        // Compute LBP features
-        
-       // std::vector<float> lbpFeatures = computeLBP(gray);
 
-        // Combine HOG and LBP features
         features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
-        //features.insert(features.end(), lbpFeatures.begin(), lbpFeatures.end());
    
     }
 
