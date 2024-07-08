@@ -22,21 +22,35 @@ enum DET_LABEL
 
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
-float min_circularity = 0.6f; // filter parameter: minimum circularity normalized
-float sigma = 1.0f;
-float min_width_perc = 0.08f; // filter parameter: minimum width of light expressed as percentage of image width
-float max_width_perc = 0.8f;  // filter parameter: maximum width of light expressed as percentage of image width
 
-float min_area_perc = 0.0002f; // filter parameter: minimum area of signs extressed as percentage of image area
-float max_area_perc = 0.5f;    // filter parameter: maximum area of signs extressed as percentage of image area
-
-int minHueValue = 0;  // filter parameter: minimum value of Hue to pick the red color
-int maxHueValue = 20; // filter parameter: maximum value of Hue to pick the red color
-
+// Rectangle parameters
 int min_rect_area = 800;
 int max_rect_area = 12000;
 
 float min_rectangularity = 0.75;
+
+float aspect_ratio = 0.16;
+float max_aspect_ratio_difference = 0.3;
+
+float angle_tolerance = 45.0;
+float min_horizontal_angle = 90.0 - angle_tolerance;
+float max_horizontal_angle = 90.0 + angle_tolerance;
+
+// Values of Hue to pick the red color
+int minHueValue1 = 0;
+int maxHueValue1 = 20;
+int minHueValue2 = 160;
+int maxHueValue2 = 180;
+
+float perc_area_roi = 0.04;
+
+// Circle parameters
+int minDist = 120;
+int cannyTrheshold = 100;
+int accumulatorTrheshold = 18;
+int minRadius = 20;
+int maxRadius = 150;
+
 
 std::vector<std::vector<cv::Point>> realSignContours;     // contours vector of real signs, taken from Json
 std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
@@ -50,9 +64,9 @@ std::vector<cv::Rect> ROIs;
 std::vector<cv::Rect> Rects;
 std::vector<cv::RotatedRect> MinRects;
 
-      std::vector<cv::Rect> candidate_roi;
-        std::vector<cv::Rect> candidate_rects;
-        std::vector<cv::RotatedRect> candidate_min_rects;
+std::vector<cv::Rect> candidate_roi;
+std::vector<cv::Rect> candidate_rects;
+std::vector<cv::RotatedRect> candidate_min_rects;
 
 struct Utils
 {
@@ -70,17 +84,14 @@ struct Utils
         // denoising
         cv::GaussianBlur(gray, gray, cv::Size(5, 5), 0, 0.6);
 
-
         // rectangles enhancement with grayscale morphological tophat
         cv::Mat tophat;
         cv::morphologyEx(gray, tophat, cv::MORPH_TOPHAT,
                          cv::getStructuringElement(cv::MORPH_RECT, cv::Size(11, 61)));
-
        
-        cv::Mat edges;
-
         // binarization
-        Utils::AdaptiveThresh(tophat, edges, 71, -1);
+        cv::Mat edges;
+        cv::adaptiveThreshold(tophat, edges, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 71, -1);
 
 
         // morpological opening
@@ -90,6 +101,7 @@ struct Utils
         // Find contours
         cv::findContours(edges, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
 
+      
         // filter by area
         contours.erase(std::remove_if(contours.begin(), contours.end(),
                                       [](const std::vector<cv::Point> &object)
@@ -98,7 +110,7 @@ struct Utils
                                           return area < min_rect_area || area > max_rect_area;
                                       }),
                        contours.end());
-
+        
         // filter by rectangularity
         contours.erase(std::remove_if(contours.begin(), contours.end(),
                                       [](const std::vector<cv::Point> &object)
@@ -117,7 +129,7 @@ struct Utils
                                           return area / bounding_rect_area < min_rectangularity;
                                       }),
                        contours.end());
-
+       
         // filter by aspect ratio
         contours.erase(std::remove_if(contours.begin(), contours.end(),
                                       [](const std::vector<cv::Point> &object)
@@ -128,10 +140,10 @@ struct Utils
                                               cv::swap(rot_rect.size.width, rot_rect.size.height);
                                               rot_rect.angle += 90.f;
                                           }
-                                          return std::abs(rot_rect.size.aspectRatio() - 0.3) > 0.16;
+                                          return std::abs(rot_rect.size.aspectRatio() - max_aspect_ratio_difference) > aspect_ratio;
                                       }),
                        contours.end());
-
+        std::cout << contours.size();
         // filter by orientation
         contours.erase(std::remove_if(contours.begin(), contours.end(),
                                       [](const std::vector<cv::Point> &object)
@@ -143,10 +155,6 @@ struct Utils
                                               rot_rect.angle += 90.f;
                                           }
 
-                                          float angle_tolerance = 45.0;
-                                          float min_horizontal_angle = 90.0 - angle_tolerance;
-                                          float max_horizontal_angle = 90.0 + angle_tolerance;
-
                                           return !(rot_rect.angle >= min_horizontal_angle && rot_rect.angle <= max_horizontal_angle);
                                       }),
                        contours.end());
@@ -154,98 +162,7 @@ struct Utils
         cv::Mat output = img_in.clone();
     }
 
-    static float Median(const cv::Mat &img_in)
-    {
-        // Convertiamo la matrice in un vettore
-        std::vector<int> values;
-        if (img_in.isContinuous())
-        {
-            values.assign(img_in.data, img_in.data + img_in.total());
-        }
-        else
-        {
-            for (int i = 0; i < img_in.rows; ++i)
-            {
-                values.insert(values.end(), img_in.ptr<int>(i), img_in.ptr<int>(i) + img_in.cols);
-            }
-        }
-
-        // Ordiniamo il vettore
-        std::sort(values.begin(), values.end());
-
-        // Calcoliamo la mediana
-        int median;
-        size_t size = values.size();
-        if (size % 2 == 0)
-        {
-            median = (values[size / 2 - 1] + values[size / 2]) / 2;
-        }
-        else
-        {
-            median = values[size / 2];
-        }
-        return median;
-    }
-    /**
-     * @brief Real version of Canny's Algorithm
-     *
-     * @param img_in Input image
-     * @param img_blurred Output image after Gaussian Blur
-     * @param edges Output edge's image after Canny's algorithm
-     * @param sigma Sigma coefficient of Gaussian Blur
-     */
-    static void RealCanny(cv::Mat &img_in, cv::Mat &img_blurred, cv::Mat &edges, int sigma)
-    {
-        //  cv::cvtColor(img_in, img_in, cv::COLOR_BGR2GRAY);
-
-        //   Utils::CustomGaussianBlur(img_in, img_blurred, sigma);
-
-        cv::GaussianBlur(img_in, img_blurred, cv::Size(5, 5), 0.5, 0.5);
-        //  double canny_thresh = cv::threshold(img_blurred, img_blurred, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-        double canny_thresh = 50;
-
-        // Convertiamo la matrice in un vettore
-        std::vector<int> values;
-        if (img_blurred.isContinuous())
-        {
-            values.assign(img_blurred.data, img_blurred.data + img_blurred.total());
-        }
-        else
-        {
-            for (int i = 0; i < img_blurred.rows; ++i)
-            {
-                values.insert(values.end(), img_blurred.ptr<int>(i), img_blurred.ptr<int>(i) + img_blurred.cols);
-            }
-        }
-
-        // Ordiniamo il vettore
-        std::sort(values.begin(), values.end());
-
-        // Calcoliamo la mediana
-        int median;
-        size_t size = values.size();
-        if (size % 2 == 0)
-        {
-            median = (values[size / 2 - 1] + values[size / 2]) / 2;
-        }
-        else
-        {
-            median = values[size / 2];
-        }
-
-        // std::cout << median;
-        int lower = int(std::max(0, int(0.9 * median)));
-        int upper = int(std::min(255, int(1.2 * median)));
-
-        cv::Canny(img_blurred, edges, 150 / 2, 150, 3, false);
-
-        // A Close operation could be useful??
-        //  cv::morphologyEx(edges, edges, cv::MORPH_CLOSE,
-        //                    cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
-
-    
-    }
+  
 
     /**
      * @brief Histogram Equalization on LAB channels
@@ -282,18 +199,7 @@ struct Utils
         cv::cvtColor(equalizedLabImage, img_output_Labeq, cv::COLOR_Lab2BGR);
     }
 
-    /**
-     * @brief Adaptive Threshold
-     *
-     * @param img_in Input Image
-     * @param img_bin_adaptive Output Image
-     */
-    static void AdaptiveThresh(const cv::Mat &img_in, cv::Mat &img_bin_adaptive, int block_size, int c)
-    {
 
-        cv::adaptiveThreshold(img_in, img_bin_adaptive, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, block_size, c);
-        // ipa::imshow("Adaptive binarization", img_bin_adaptive, true, 2.0f);
-    }
 
     static void RegionGrowingHSV(cv::Mat &img_in, cv::Mat &seeds, cv::Mat &segmentedImage)
     {
@@ -309,51 +215,34 @@ struct Utils
 
         // Segment the hue image based on the specified hue range for the sign color
         cv::Mat hueBinary1;
-        cv::inRange(hueImage, cv::Scalar(minHueValue), cv::Scalar(maxHueValue), hueBinary1);
+        cv::inRange(hueImage, cv::Scalar(minHueValue1), cv::Scalar(maxHueValue1), hueBinary1);
 
         cv::Mat hueBinary2;
-        cv::inRange(hueImage, cv::Scalar(160), cv::Scalar(180), hueBinary2);
+        cv::inRange(hueImage, cv::Scalar(minHueValue2), cv::Scalar(maxHueValue2), hueBinary2);
 
         cv::Mat hueBinary;
         cv::bitwise_or(hueBinary1, hueBinary2, hueBinary);
 
-        //    ipa::imshow("huebin", hueBinary, true, 0.5f);
+        cv::Mat saturationBinary;
 
- 
-
-        cv::Mat binarySaturation;
-
-        // Calculate the median value of the saturation channel
-        double medianValue = Utils::Median(hlsChannels[1]);
-
-        //  cv::threshold(hlsChannels[1], binarySaturation, 20, 255, cv::THRESH_BINARY);
-        // cv::imwrite(std::string(IMAGES_PATH) + "/sat.jpg", binarySaturation);
-
-        AdaptiveThresh(hlsChannels[1], binarySaturation, 71, 2);
-        //  ipa::imshow("prova", binarySaturation, true, 0.5f);
-
- 
+        cv::adaptiveThreshold(hlsChannels[1], saturationBinary, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 71, 2);
 
         cv::Mat seeds_prev;
-        cv::Mat predicate = binarySaturation & hueBinary;
+        cv::Mat predicate = saturationBinary & hueBinary;
         int i = 0;
         do
         {
             seeds_prev = seeds.clone();
 
             cv::Mat candidates_img;
-            cv::dilate(seeds, candidates_img,
-                       cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+            cv::dilate(seeds, candidates_img,cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
             candidates_img = candidates_img - seeds;
 
             seeds += candidates_img & predicate;
-
             i++;
         } while (cv::countNonZero(seeds - seeds_prev) && i < 60);
 
         segmentedImage = seeds;
-
-      //  cv::imwrite(std::string(IMAGES_PATH) + "/edges.jpeg", segmentedImage);
     }
 
     /**
@@ -431,11 +320,9 @@ struct Utils
     static std::vector<float> HogDescriptors(const cv::Mat& img_in) {
 
         cv::Mat resized;
+
         // Resize the image if needed
-        cv::resize(img_in, resized, cv::Size(64, 64));
-
-
-        cv::resize(img_in, resized, cv::Size(80, 80));
+         cv::resize(img_in, resized, cv::Size(80, 80));
 
         cv::HOGDescriptor hog(
             cv::Size(80, 80), // winSize
@@ -476,7 +363,7 @@ struct Utils
 
     static void writeCsv(const std::vector<std::vector<float>> &feature, std::string filename)
     {
-        // Save GLCM features to a CSV file
+        // Save features to a CSV file
         std::ofstream file(filename, std::ios::app);
         if (file.is_open())
         {
@@ -491,51 +378,14 @@ struct Utils
             }
 
             file.close();
-            //     std::cout << "Features successfully saved to glcm_features.csv" << std::endl;
         }
         else
         {
-            std::cerr << "Unable to open file to save GLCM features." << std::endl;
+            std::cerr << "Unable to open file to save features." << std::endl;
             return;
         }
     }
-    // Normalize each column (feature) independently using min-max normalization
-    void static normalizeFeatures(std::vector<std::vector<float>> &features)
-    {
-        // Vector to store minimum and maximum values for each feature (column)
-        std::vector<std::pair<float, float>> minMaxValues(features.size(), {std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()});
-
-        // Find the minimum and maximum values for each column
-        for (size_t row = 0; row < features.size(); ++row)
-        {
-            for (size_t col = 0; col < features[row].size(); ++col)
-            {
-                minMaxValues[col].first = std::min(minMaxValues[col].first, features[row][col]);
-                minMaxValues[col].second = std::max(minMaxValues[col].second, features[row][col]);
-            }
-        }
-
-        // Normalize each element in each feature (column)
-        for (size_t row = 0; row < features.size(); ++row)
-        {
-            for (size_t col = 0; col < features[row].size(); ++col)
-            {
-                float minVal = minMaxValues[col].first;
-                float maxVal = minMaxValues[col].second;
-                // Apply min-max normalization formula: (value - min) / (max - min)
-                if (maxVal != minVal)
-                {
-                    features[row][col] = (features[row][col] - minVal) / (maxVal - minVal);
-                }
-                else
-                {
-                    // Handle division by zero if minVal == maxVal
-                    features[row][col] = 0.0f;
-                }
-            }
-        }
-    }
-
+    
     static void ShowMachineLearningResults(cv::Mat& img_in, const std::string filename, int index, cv::Rect rectangle,cv::Scalar color )
     {
 

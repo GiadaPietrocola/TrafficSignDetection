@@ -31,6 +31,8 @@ struct CoreFunctions
 
         Utils::findRectangles(preProcessedImg, contours);
 
+    
+
         // //------------------------------------------------------------------------------
         // //======================= ROI CREATION =================================
         // //------------------------------------------------------------------------------
@@ -112,6 +114,8 @@ struct CoreFunctions
             ROIs.push_back(ROI);
             Rects.push_back(bounding_rect);
             MinRects.push_back(min_bounding_rect);
+
+            
         }
     }
 
@@ -130,7 +134,6 @@ struct CoreFunctions
             cv::cvtColor(img_roi, roi_gray, cv::COLOR_BGR2GRAY);
             cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
-        
 
             cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
 
@@ -153,7 +156,6 @@ struct CoreFunctions
 
             //  ipa::imshow("seeds", seeds, true);
 
-
             cv::Mat segmentedImage;
 
             Utils::RegionGrowingHSV(img_roi, seeds, segmentedImage);
@@ -171,13 +173,14 @@ struct CoreFunctions
             //   std::cout << img_roi.rows * img_roi.cols << "\n";
 
             //   ipa::imshow("seg", segmentedImage, true);
-
             if (count > 0.04 * img_roi.rows * img_roi.cols)
             {
                 candidate_roi.push_back(ROIs[k]);
                 candidate_rects.push_back(Rects[k]);
                 candidate_min_rects.push_back(MinRects[k]);
             }
+
+            
         }
     }
 
@@ -204,9 +207,11 @@ struct CoreFunctions
 
             HoughCircles(roi_gray, circles, cv::HOUGH_GRADIENT, 2, 120, 100, 18, 20, 150);
 
+           
+
             if (!circles.empty())
             {
-
+                
                 std::vector<cv::Rect> candidate;
 
                 // Draw the circles on the original image
@@ -235,13 +240,14 @@ struct CoreFunctions
                         //   cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
 
                         //   ipa::imshow("roi", img_roi, true);
-
-                        
                     }
                 }
 
                 if (candidate.size() > 0)
                 {
+
+
+                   
 
                     // Define the ROI
                     int rect_width = 1.5 * candidate_rects[k].width;
@@ -264,8 +270,6 @@ struct CoreFunctions
                     cv::rectangle(tmp, bounding, cv::Scalar(255, 0, 0), 2);
                     cv::Mat roi = preProcessedImg(bounding).clone();
                     // ipa::imshow("roi", roi, true);
-
-                    cv::imwrite(std::string(IMAGES_PATH) + "/final_roi.jpg", roi);
 
                     std::vector<float> roiFeatures;
                     Utils::features(roi, roiFeatures);
@@ -297,6 +301,7 @@ struct CoreFunctions
                         c++;
                     }
 
+                    ipa::imshow("Hope", img_copy, true);
                 }
 
                 
