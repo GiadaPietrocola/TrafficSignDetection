@@ -56,8 +56,6 @@ struct CoreFunctions
         // //------------------------------------------------------------------------------
         PipeHoughCircles(preProcessedImg,img_in);
 
-        // ipa::imshow("img", img_copy, true);
-        // ipa::imshow("img", img_in, true);
     }
 
     /**
@@ -137,7 +135,6 @@ struct CoreFunctions
 
             cv::Mat seeds = cv::Mat::zeros(img_roi.size(), CV_8UC1); // Initialize seeds matrix with zeros
 
-            // Assuming Rects[k] represents your rectangle
             int centerX = Rects[k].x - ROIs[k].x + Rects[k].width / 2;  // X coordinate of the center of the rectangle
             int centerY = Rects[k].y - ROIs[k].y + Rects[k].height / 2; // Y coordinate of the center of the rectangle
 
@@ -154,7 +151,6 @@ struct CoreFunctions
             if (centerX + 8 + Rects[k].width / 2 >= 0 && centerX + 8 + Rects[k].width / 2 < img_roi.cols)
                 seeds.at<uchar>(centerY, centerX + 4 + +Rects[k].width / 2) = 255; // Right of the center
 
-            //  ipa::imshow("seeds", seeds, true);
 
             cv::Mat segmentedImage;
 
@@ -169,10 +165,7 @@ struct CoreFunctions
                         count++;
                 }
             }
-            //   std::cout << count<<"\n";
-            //   std::cout << img_roi.rows * img_roi.cols << "\n";
 
-            //   ipa::imshow("seg", segmentedImage, true);
             if (count > 0.04 * img_roi.rows * img_roi.cols)
             {
                 candidate_roi.push_back(ROIs[k]);
@@ -191,6 +184,9 @@ struct CoreFunctions
      */
     static void PipeHoughCircles(cv::Mat &preProcessedImg, cv::Mat img_in)
     {
+
+        cv::Mat img_copy = img_in.clone();
+
         cv::Mat tmp = preProcessedImg.clone();
         cv::cvtColor(tmp, tmp, cv::COLOR_BGR2GRAY);
 
@@ -205,10 +201,9 @@ struct CoreFunctions
             std::vector<cv::Vec3f> circles;
             cv::GaussianBlur(roi_gray, roi_gray, cv::Size(3, 3), 0.5);
 
-            HoughCircles(roi_gray, circles, cv::HOUGH_GRADIENT, 2, 120, 100, 18, 20, 150);
+            HoughCircles(roi_gray, circles, cv::HOUGH_GRADIENT, 2, minDist, cannyTrheshold, accumulatorTrheshold, minRadius, maxRadius);
 
            
-
             if (!circles.empty())
             {
                 
@@ -226,28 +221,14 @@ struct CoreFunctions
                     if (Utils::circleContainsRotatedRect(center, radius, candidate_min_rects[k]))
                     {
 
-                        center.x -= ROIs[k].x; // Adjust for ROI offset
-                        center.y -= ROIs[k].y; // Adjust for ROI offset
-
-                        circle(img_roi, center, radius, cv::Scalar(0, 255, 0), 4);
-                        circle(img_roi, center, 5, cv::Scalar(0, 128, 255), -1);
-
                         cv::Rect boundingRect(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
-                        boundingRect.x += candidate_roi[k].x; // Adjust for ROI offset
-                        boundingRect.y += candidate_roi[k].y; // Adjust for ROI offset
                         candidate.push_back(boundingRect);
 
-                        //   cv::rectangle(img_in, boundingRect, cv::Scalar(255, 0, 0), 2);
-
-                        //   ipa::imshow("roi", img_roi, true);
                     }
                 }
 
                 if (candidate.size() > 0)
                 {
-
-
-                   
 
                     // Define the ROI
                     int rect_width = 1.5 * candidate_rects[k].width;
@@ -269,15 +250,15 @@ struct CoreFunctions
                     
                     cv::rectangle(tmp, bounding, cv::Scalar(255, 0, 0), 2);
                     cv::Mat roi = preProcessedImg(bounding).clone();
-                    // ipa::imshow("roi", roi, true);
 
                     std::vector<float> roiFeatures;
                     Utils::features(roi, roiFeatures);
+
                     // Track the best intersection for this ROI
                     float bestIntersection = 0.0;
                     int bestContourIndex = -1;
 
-                    cv::Mat img_copy = img_in.clone();
+                
 
                     for (int j = 0; j < realSignContours.size(); j++) {
                         float intersection = Utils::IntersectionOverUnion(Utils::verticesToRect(realSignContours[j]), bounding);
@@ -299,15 +280,11 @@ struct CoreFunctions
                         falseFeatures.push_back(roiFeatures);
                         Utils::ShowMachineLearningResults(img_copy, "10-fold-neg.SEL(001)15.sco", falseFeatures.size(), bounding, cv::Scalar(0, 0, 255));
                         c++;
-                    }
-
-                    ipa::imshow("Hope", img_copy, true);
+                    }                    
                 }
-
-                
             }
         }
-       // ipa::imshow("Hope", tmp, true);
+        ipa::imshow("Detection", img_copy, true);
     }
 
     /**
@@ -317,10 +294,10 @@ struct CoreFunctions
      */
     static void JsonHandler(bool show)
     {
-        const int total_number = 55;
+        const int total_number = 96;
         int ok = 0;
 
-        for (int k = 55; k <= total_number; k++)
+        for (int k = 1; k <= total_number; k++)
         {
             realSignContours.clear();
             candidateSignCotours.clear();
@@ -345,15 +322,9 @@ struct CoreFunctions
             CoreFunctions::Pipeline(img, show);
             float max_intersection = CalculateMaxIntersection();
 
-            LogDetectionResult(k, max_intersection, ok);
             cv::destroyAllWindows();
         }
 
-      //  Utils::writeCsv(falseFeatures, "false_glcm_features_test.csv");
-      //  Utils::writeCsv(trueFeatures, "true_glcm_features_test.csv");
-
-        printf("Number of ok: %d on %d\n", ok, total_number);
-        printf("Percentual %f", ((float)ok / total_number) * 100);
     }
 
     /**
@@ -432,19 +403,4 @@ struct CoreFunctions
         return max_intersection;
     }
 
-    /**
-     * @brief Logs the detection result for a given sign.
-     *
-     * @param k The sign index.
-     * @param max_intersection The maximum intersection-over-union (IoU) value.
-     * @param ok The count of correctly detected signs.
-     */
-    static void LogDetectionResult(int k, float max_intersection, int &ok)
-    {
-        std::string msg = "Sign" + std::to_string(k) + (max_intersection > 0.5 ? ": ok" : ": no");
-        printf("%s\n", msg.c_str());
-
-        if (max_intersection > 0.5)
-            ok++;
-    }
 };
