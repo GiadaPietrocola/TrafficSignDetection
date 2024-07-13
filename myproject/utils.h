@@ -8,18 +8,6 @@
 
 #include <numeric>
 
-// for vscode work
-#ifndef IMAGES_PATH
-#define IMAGES_PATH "CassinoDataSet"
-#endif
-
-enum DET_LABEL
-{
-    TP,
-    FP,
-    FN
-};
-
 // //------------------------------------------------------------------------------
 // //======================= CONSTANTS =================================
 
@@ -51,7 +39,6 @@ int accumulatorTrheshold = 18;
 int minRadius = 20;
 int maxRadius = 150;
 
-
 std::vector<std::vector<cv::Point>> realSignContours;     // contours vector of real signs, taken from Json
 std::vector<std::vector<cv::Point>> candidateSignCotours; // contours vector of candidate signs
 
@@ -70,13 +57,16 @@ std::vector<cv::RotatedRect> candidate_min_rects;
 
 struct Utils
 {
-
-    // //------------------------------------------------------------------------------
-    // //======================= METHODS =================================
-
+    /**
+     * @brief Find rectangles in an image.
+     * 
+     * This function processes the input image to find rectangles based on various parameters such as area, rectangularity, aspect ratio, and orientation.
+     * 
+     * @param img_in Input image.
+     * @param contours Output vector of contours representing the found rectangles.
+     */
     static void findRectangles(cv::Mat &img_in, std::vector<std::vector<cv::Point>> &contours)
     {
-
         // switch to grayscale
         cv::Mat gray;
         cv::cvtColor(img_in, gray, cv::COLOR_BGR2GRAY);
@@ -93,7 +83,6 @@ struct Utils
         cv::Mat edges;
         cv::adaptiveThreshold(tophat, edges, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 71, -1);
 
-
         // morpological opening
         cv::morphologyEx(edges, edges, cv::MORPH_OPEN,
                          cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5)));
@@ -101,7 +90,6 @@ struct Utils
         // Find contours
         cv::findContours(edges, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
 
-      
         // filter by area
         contours.erase(std::remove_if(contours.begin(), contours.end(),
                                       [](const std::vector<cv::Point> &object)
@@ -162,13 +150,11 @@ struct Utils
         cv::Mat output = img_in.clone();
     }
 
-  
-
     /**
-     * @brief Histogram Equalization on LAB channels
+     * @brief Perform histogram equalization on the LAB channels of an image.
      *
-     * @param img_in Input Image
-     * @param img_output_Labeq Output Image
+     * @param img_in Input image.
+     * @param img_output_Labeq Output image after histogram equalization.
      */
     static void HistogramLabeq(const cv::Mat &img_in, cv::Mat &img_output_Labeq)
     {
@@ -199,8 +185,15 @@ struct Utils
         cv::cvtColor(equalizedLabImage, img_output_Labeq, cv::COLOR_Lab2BGR);
     }
 
-
-
+    /**
+     * @brief Perform region growing segmentation on an image in HSV color space.
+     * 
+     * This function segments an image based on hue and saturation values, starting from initial seed points.
+     * 
+     * @param img_in Input image.
+     * @param seeds Input/output binary image indicating the initial seeds and the resulting segmented regions.
+     * @param segmentedImage Output segmented image.
+     */
     static void RegionGrowingHSV(cv::Mat &img_in, cv::Mat &seeds, cv::Mat &segmentedImage)
     {
         cv::Mat hlsImage;
@@ -246,11 +239,11 @@ struct Utils
     }
 
     /**
-     * @brief Intersection Over Union
+     * @brief Calculate the Intersection Over Union (IOU) of two rectangles.
      *
-     * @param rect1 First Input Rect
-     * @param rect2 Second Input Rect
-     * @return float Intersection Over Union
+     * @param rect1 First input rectangle.
+     * @param rect2 Second input rectangle.
+     * @return float Intersection Over Union value.
      */
     static float IntersectionOverUnion(cv::Rect rect1, cv::Rect rect2)
     {
@@ -269,9 +262,16 @@ struct Utils
         return (areaOfOverlap / areaOfUnion);
     }
 
+    /**
+     * @brief Convert vertices to a rectangle.
+     * 
+     * This function takes a vector of points representing the vertices of a shape and converts them into a cv::Rect.
+     * 
+     * @param vertices Vector of points representing the vertices.
+     * @return cv::Rect Resulting rectangle.
+     */
     static cv::Rect verticesToRect(std::vector<cv::Point> vertices)
     {
-
         // Trova i valori x e y minimi e massimi tra i vertici
         int minX = std::min({vertices[0].x, vertices[1].x, vertices[2].x, vertices[3].x});
         int minY = std::min({vertices[0].y, vertices[1].y, vertices[2].y, vertices[3].y});
@@ -286,6 +286,16 @@ struct Utils
         return cv::Rect(minX, minY, width, height);
     }
 
+    /**
+     * @brief Check if a circle contains a rotated rectangle.
+     * 
+     * This function checks if all vertices of a rotated rectangle are within a given circle.
+     * 
+     * @param center Center of the circle.
+     * @param radius Radius of the circle.
+     * @param rotatedRect Rotated rectangle to check.
+     * @return true if the circle contains the rotated rectangle, false otherwise.
+     */
     static bool circleContainsRotatedRect(const cv::Point2f &center, float radius, const cv::RotatedRect &rotatedRect)
     {
         // Extract the vertices of the rotated rectangle
@@ -305,6 +315,14 @@ struct Utils
         return true; // If all vertices are within the circle, return true
     }
 
+    /**
+     * @brief Get contours of a rectangle.
+     * 
+     * This function takes a rectangle and returns a vector of points representing its contours.
+     * 
+     * @param rect Input rectangle.
+     * @return std::vector<cv::Point> Vector of points representing the contours of the rectangle.
+     */
     static std::vector<cv::Point> getRectContours(cv::Rect rect)
     {
         std::vector<cv::Point> tmp;
@@ -315,8 +333,14 @@ struct Utils
         return tmp;
     }
 
-
-
+    /**
+     * @brief Calculate Histogram of Oriented Gradients (HOG) descriptors for an image.
+     * 
+     * This function computes HOG descriptors for an input image and normalizes them to the range [0, 1].
+     * 
+     * @param img_in Input image.
+     * @return std::vector<float> Normalized HOG descriptors.
+     */
     static std::vector<float> HogDescriptors(const cv::Mat& img_in) {
 
         cv::Mat resized;
@@ -348,9 +372,16 @@ struct Utils
         return normalizedHogFeatures;
     }
 
+    /**
+     * @brief Extract features from an image.
+     * 
+     * This function extracts features from an input image, specifically HOG descriptors, and appends them to the provided feature vector.
+     * 
+     * @param img_in Input image.
+     * @param features Output vector of features.
+     */
     static void features(const cv::Mat &img_in, std::vector<float> &features)
     {
-
         cv::Mat gray;
 
         cv::cvtColor(img_in, gray, cv::COLOR_RGB2GRAY);
@@ -358,16 +389,22 @@ struct Utils
         std::vector<float> hogFeatures = HogDescriptors(gray);
 
         features.insert(features.end(), hogFeatures.begin(), hogFeatures.end());
-   
     }
 
+    /**
+     * @brief Write features to a CSV file.
+     * 
+     * This function saves the provided features to a CSV file with the specified filename.
+     * 
+     * @param feature Vector of feature vectors to be saved.
+     * @param filename Name of the output CSV file.
+     */
     static void writeCsv(const std::vector<std::vector<float>> &feature, std::string filename)
     {
         // Save features to a CSV file
         std::ofstream file(filename, std::ios::app);
         if (file.is_open())
         {
-
             for (int i = 0; i < feature.size(); i++)
             {
                 for (int j = 0; j < feature[i].size(); j++)
@@ -385,10 +422,20 @@ struct Utils
             return;
         }
     }
-    
+
+    /**
+     * @brief Display machine learning results on an image.
+     * 
+     * This function reads a CSV file containing machine learning results and displays them on the input image.
+     * 
+     * @param img_in Input image.
+     * @param filename Name of the CSV file containing the results.
+     * @param index Index of the sample to be displayed.
+     * @param rectangle Rectangle to be drawn on the image.
+     * @param color Color of the rectangle and text.
+     */
     static void ShowMachineLearningResults(cv::Mat& img_in, const std::string filename, int index, cv::Rect rectangle,cv::Scalar color )
     {
-
         std::ifstream file(filename);
         std::string line;
 
@@ -410,7 +457,6 @@ struct Utils
             if (index== sampleIndex && score > 0.25) {
                 cv::rectangle(img_in, rectangle, color, 2);
                 cv::putText(img_in, std::to_string(score).substr(0, 6), cv::Point(rectangle.x+rectangle.width+10, rectangle.y + rectangle.height/2), cv::FONT_HERSHEY_SIMPLEX, 1.5, color, 3);
-
             }
         }
     }
